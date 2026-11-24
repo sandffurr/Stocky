@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Stocky</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f472b6">
+<meta name="theme-color" content="#fdf2f8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Stocky">
@@ -440,16 +440,15 @@ button:active{transform:scale(.94)}
     <div class="flex items-center justify-between text-white">
       <span class="text-sm font-bold">📷 สแกนบาร์โค้ด</span>
       <div class="flex gap-2">
-        <button type="button" x-show="hasTorch" @click="toggleTorch()" class="px-3 py-1.5 rounded-full text-xs font-bold border border-white/30" :class="torchOn?'bg-amber-400 text-slate-900 border-amber-400':'bg-white/10 text-white'" x-text="torchOn?'🔦 ปิดไฟฉาย':'🔦 เปิดไฟฉาย'"></button>
+        <button type="button" @click="toggleTorch()" class="px-3 py-1.5 rounded-full text-xs font-bold border border-white/30" :class="torchOn?'bg-amber-400 text-slate-900 border-amber-400':'bg-white/10 text-white'" x-text="torchOn?'🔦 ปิดไฟฉาย':'🔦 เปิดไฟฉาย'"></button>
         <button type="button" @click="closeScan()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white/15 text-white">✕</button>
       </div>
     </div>
 
     <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-zinc-950">
-      <video id="scanVideo" class="w-full h-full object-cover" playsinline muted autoplay></video>
-      <div id="readerFallback" class="w-full hidden"></div>
+      <div id="reader" class="w-full h-full"></div>
       <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <div class="w-72 h-36 rounded-2xl border-2 border-pink-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] relative overflow-hidden">
+        <div class="w-72 h-32 rounded-2xl border-2 border-pink-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] relative overflow-hidden">
           <div class="absolute inset-x-2 top-1/2 h-0.5 bg-rose-500/80"></div>
         </div>
       </div>
@@ -596,7 +595,7 @@ Alpine.data('app', () => ({
   q:'', cat:'all', st:'all',
   f:null, catForm:null,
   scan:false, scanMsg:'', scanForForm:false, _handlingScan:false,
-  hasTorch:false, torchOn:false, _stream:null, _raf:null, _detector:null,
+  torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
   setup:{code:'', cfg:'', err:''},
   themes:[
@@ -854,125 +853,98 @@ Alpine.data('app', () => ({
     ev.target.value = '';
   },
 
+  // บาร์โค้ด
   openScan(forForm = false){
     this.scanForForm = forForm;
     this.scan = true;
-    this.hasTorch = false;
     this.torchOn = false;
-    this.scanMsg = 'กำลังเปิดกล้องความละเอียดสูง...';
+    this.scanMsg = 'กำลังเปิดกล้อง...';
     this._handlingScan = false;
 
     this.$nextTick(async () => {
-      const formats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','codabar','itf','qr_code'];
-      if('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia){
-        try{
-          const supported = BarcodeDetector.getSupportedFormats ? await BarcodeDetector.getSupportedFormats() : formats;
-          const useFormats = formats.filter(f => supported.includes(f));
-          this._detector = new BarcodeDetector({formats: useFormats.length ? useFormats : undefined});
-
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-              facingMode: {ideal: 'environment'},
-              width: {ideal: 1280},
-              height: {ideal: 720},
-              focusMode: {ideal: 'continuous'}
-            }
-          });
-          this._stream = stream;
-          const track = stream.getVideoTracks()[0];
-          const caps = track?.getCapabilities ? track.getCapabilities() : {};
-          if(caps.torch) this.hasTorch = true;
-          if(caps.focusMode && caps.focusMode.includes('continuous')){
-            try{ await track.applyConstraints({advanced: [{focusMode: 'continuous'}]}); }catch{}
-          }
-
-          const vid = document.getElementById('scanVideo');
-          const fb = document.getElementById('readerFallback');
-          if(fb) fb.classList.add('hidden');
-          if(vid){
-            vid.classList.remove('hidden');
-            vid.srcObject = stream;
-            await vid.play();
-          }
-          this.scanMsg = 'จ่อบาร์โค้ดให้ตรงเส้นแดงได้เลยครับ';
-
-          const tick = async () => {
-            if(!this.scan || this._handlingScan || !vid || vid.readyState < 2){
-              if(this.scan && !this._handlingScan) this._raf = requestAnimationFrame(tick);
-              return;
-            }
-            try{
-              const codes = await this._detector.detect(vid);
-              if(codes && codes.length && codes[0].rawValue){
-                this.onScan(codes[0].rawValue);
-                return;
-              }
-            }catch{}
-            if(this.scan && !this._handlingScan) this._raf = requestAnimationFrame(tick);
-          };
-          this._raf = requestAnimationFrame(tick);
-          return;
-        }catch{
-          // ตกลงไปใช้ Html5Qrcode ด้านล่าง
-        }
-      }
-
+      await this.stopScannerOnly();
       try{
-        const vid = document.getElementById('scanVideo');
-        const fb = document.getElementById('readerFallback');
-        if(vid) vid.classList.add('hidden');
-        if(fb) fb.classList.remove('hidden');
-        this.scanner = new Html5Qrcode('readerFallback');
+        if(typeof Html5Qrcode === 'undefined') throw Error('ไม่พบไลบรารีสแกน');
+        const formats = typeof Html5QrcodeSupportedFormats !== 'undefined' ? [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ] : undefined;
+
+        this.scanner = new Html5Qrcode('reader', formats ? {formatsToSupport: formats, verbose: false} : {verbose: false});
         await this.scanner.start(
           {facingMode: 'environment'},
           {
-            fps: 18,
-            qrbox: {width: 300, height: 150},
-            experimentalFunctions: {useBarCodeDetectorIfSupported: true}
+            fps: 15,
+            qrbox: {width: 280, height: 120},
+            aspectRatio: 1.333,
+            videoConstraints: {
+              facingMode: {ideal: 'environment'},
+              width: {ideal: 1280},
+              height: {ideal: 720}
+            }
           },
           code => this.onScan(code),
           () => {}
         );
-        this.scanMsg = 'จ่อบาร์โค้ดให้ตรงกรอบได้เลยครับ';
+        this.scanMsg = 'ถือบาร์โค้ดห่างกล้องประมาณ 10–15 ซม. ให้ตรงเส้นแดง';
       }catch(e){
-        this.scanMsg = 'เปิดกล้องไม่ได้ (ต้องเปิดผ่าน https และอนุญาตกล้อง)';
+        this.scanMsg = 'เปิดกล้องไม่ได้ กรุณาอนุญาตกล้องและเปิดผ่าน HTTPS';
       }
     });
   },
 
+  getVideoTrack(){
+    const vid = document.querySelector('#reader video');
+    const stream = vid?.srcObject;
+    return stream?.getVideoTracks?.()[0] || null;
+  },
+
   async toggleTorch(){
+    const next = !this.torchOn;
     try{
-      const track = this._stream?.getVideoTracks?.()[0];
-      if(track){
-        const next = !this.torchOn;
+      const track = this.getVideoTrack();
+      if(track && typeof track.applyConstraints === 'function'){
         await track.applyConstraints({advanced: [{torch: next}]});
         this.torchOn = next;
+        this.flash(next ? 'เปิดไฟฉายแล้ว 🔦' : 'ปิดไฟฉายแล้ว');
         return;
       }
-      if(this.scanner?.applyVideoConstraints){
-        const next = !this.torchOn;
+      if(this.scanner && typeof this.scanner.applyVideoConstraints === 'function'){
         await this.scanner.applyVideoConstraints({advanced: [{torch: next}]});
         this.torchOn = next;
+        this.flash(next ? 'เปิดไฟฉายแล้ว 🔦' : 'ปิดไฟฉายแล้ว');
+        return;
       }
+      throw Error('unsupported');
     }catch{
-      this.flash('เครื่องนี้ไม่รองรับการสั่งเปิดไฟฉายผ่านเว็บ');
+      this.torchOn = false;
+      this.flash('เบราว์เซอร์หรือกล้องเครื่องนี้ไม่รองรับการสั่งไฟฉายผ่านเว็บ');
+    }
+  },
+
+  async stopScannerOnly(){
+    const sc = this.scanner;
+    this.scanner = null;
+    if(sc){
+      try{ if(sc.isScanning) await sc.stop(); }catch{}
+      try{ await sc.clear(); }catch{}
+    }
+    const vid = document.querySelector('#reader video');
+    if(vid && vid.srcObject){
+      try{ vid.srcObject.getTracks().forEach(t => t.stop()); }catch{}
+      vid.srcObject = null;
     }
   },
 
   async closeScan(){
-    if(this._raf){ cancelAnimationFrame(this._raf); this._raf = null; }
-    this._detector = null;
-    if(this._stream){
-      this._stream.getTracks().forEach(t => t.stop());
-      this._stream = null;
-    }
-    this.hasTorch = false;
     this.torchOn = false;
-    const sc = this.scanner;
-    this.scanner = null;
     this.scan = false;
-    try{ if(sc){ await sc.stop(); await sc.clear(); } }catch{}
+    await this.stopScannerOnly();
   },
 
   async onScan(rawCode){
@@ -982,7 +954,12 @@ Alpine.data('app', () => ({
     await this.closeScan();
     if(!code){ this._handlingScan = false; return; }
     if(navigator.vibrate) navigator.vibrate(40);
-    if(this.scanForForm && this.f){ this.f.barcode = code; this.flash('สแกนบาร์โค้ดแล้ว: ' + code); this._handlingScan = false; return; }
+    if(this.scanForForm && this.f){
+      this.f.barcode = code;
+      this.flash('สแกนบาร์โค้ดแล้ว: ' + code);
+      this._handlingScan = false;
+      return;
+    }
     const found = this.list.find(i => String(i.barcode || '').trim() === code);
     if(found){
       this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
@@ -1018,3 +995,6 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
+```[cite: 3]
+
+เมื่ออัปเดตไฟล์นี้ขึ้นไปแล้ว ลองปิดแอปบนมือถือให้สนิทแล้วเปิดใหม่ 1 รอบเพื่อให้รับโค้ดชุดล่าสุดครับ
