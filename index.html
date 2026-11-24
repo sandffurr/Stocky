@@ -367,15 +367,3 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
-```[cite: 3]
-
-### วิธีอัปเดตและตรวจสอบหลังวางโค้ดใหม่
-1. นำโค้ดด้านบนไปทับไฟล์ `index.html` ใน Repository แล้ว Push/Deploy บน GitHub Pages หรือ Netlify ให้เรียบร้อย[cite: 3]
-2. เปิดหน้าเว็บผ่านเบราว์เซอร์ (แนะนำให้กด Hard Refresh หรือล้าง Cache ของหน้าเว็บเดิม 1 ครั้งเพื่อให้ได้ไฟล์ `index.html` ตัวใหม่)
-3. ตรวจสอบว่าไฟสถานะด้านบนขวาขึ้นว่า **ออนไลน์** และลองกดปุ่ม `＋` เพื่อเพิ่มสินค้าใหม่ 1 รายการ
-
-<ElicitationsGroup message="หากอัปเดตไฟล์ index.html แล้วยังเจอจุดติดขัด เลือกหัวข้อที่ต้องการได้เลยครับ:">
-  <Elicitation label="สถานะยังเป็นออฟไลน์" query="อัปเดตไฟล์ index.html ใหม่แล้ว แต่จุดสถานะด้านบนยังขึ้นว่าออฟไลน์และบันทึกข้อมูลไม่เข้า Firebase ครับ"/>
-  <Elicitation label="เช็กไฟล์ manifest และ sw.js" query="ไฟล์ index.html เสร็จแล้ว อยากเช็กตัวอย่างโค้ด manifest.json และ sw.js ที่เข้ากันเพื่อทำ PWA บนมือถือครับ"/>
-  <Elicitation label="สแกนบาร์โค้ดบนมือถือ" query="เพิ่มสินค้าได้แล้ว แต่ตอนกดปุ่มกล้องสแกนบาร์โค้ดบนมือถือมีจุดไหนที่ควรระวังเพิ่มเติมไหมครับ"/>
-</ElicitationsGroup>
