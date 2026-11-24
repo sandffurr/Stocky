@@ -23,7 +23,7 @@
 <div class="max-w-md mx-auto p-5 space-y-4">
   <h1 class="text-2xl font-bold">🐰 Stocky</h1>
   <p class="text-sm opacity-70">ตั้งค่าครั้งแรก: ใส่รหัสบ้าน (อย่างน้อย 8 ตัวอักษร) และวาง Firebase Config</p>
-  <label class="block text-sm font-medium">รหัสบ้าน (ตั้งให้ยาว เดายาก อย่างน้อย 8 ตัว)
+  <label class="block text-sm font-medium">รหัสบ้าน (ตั้งให้ยาว เดายาก อย่างน้อย 8 ตัวอักษร)
     <input x-model="setup.code" placeholder="home-secret-9988" class="mt-1 w-full rounded-xl border p-3 dark:bg-slate-800 dark:border-slate-700"></label>
   <label class="block text-sm font-medium">Firebase Config (วาง object ทั้งก้อนได้เลย)
     <textarea x-model="setup.cfg" rows="8" placeholder='{ apiKey: "...", authDomain: "...", databaseURL: "https://xxx-default-rtdb.firebaseio.com", projectId: "...", appId: "..." }' class="mt-1 w-full rounded-xl border p-3 font-mono text-xs dark:bg-slate-800 dark:border-slate-700"></textarea></label>
@@ -44,11 +44,15 @@
     <input x-model="q" type="search" placeholder="🔍 ค้นหาชื่อ / บาร์โค้ด" class="w-full rounded-xl border p-3 dark:bg-slate-800 dark:border-slate-700">
     <div class="flex gap-2 overflow-x-auto pb-1">
       <button type="button" @click="cat='all'" class="shrink-0 px-3 py-2 rounded-full text-sm border" :class="cat==='all'&&'bg-slate-800 text-white dark:bg-white dark:text-slate-900'">ทั้งหมด</button>
-      <template x-for="c in cats" :key="c.k"><button type="button" @click="cat=c.k" class="shrink-0 px-3 py-2 rounded-full text-sm border" :class="cat===c.k&&'bg-slate-800 text-white dark:bg-white dark:text-slate-900'" x-text="c.e+' '+c.n"></button></template>
+      <template x-for="c in cats" :key="c.k">
+        <button type="button" @click="cat=c.k" class="shrink-0 px-3 py-2 rounded-full text-sm border" :class="cat===c.k&&'bg-slate-800 text-white dark:bg-white dark:text-slate-900'" x-text="c.e+' '+c.n"></button>
+      </template>
     </div>
     <div class="flex gap-2">
       <button type="button" @click="st='all'" class="flex-1 py-2 rounded-xl text-sm border" :class="st==='all'&&'bg-slate-800 text-white dark:bg-white dark:text-slate-900'">ทุกสถานะ</button>
-      <template x-for="s in sts" :key="s.k"><button type="button" @click="st=s.k" class="flex-1 py-2 rounded-xl text-sm border" :class="st===s.k&&(s.bg+' text-white border-transparent')" x-text="s.n"></button></template>
+      <template x-for="s in sts" :key="s.k">
+        <button type="button" @click="st=s.k" class="flex-1 py-2 rounded-xl text-sm border" :class="st===s.k&&(s.bg+' text-white border-transparent')" x-text="s.n"></button>
+      </template>
     </div>
     <p x-show="!filtered.length" class="text-center opacity-50 py-12">ยังไม่มีสินค้า กด ＋ เพื่อเพิ่ม</p>
     <template x-for="c in cats" :key="c.k">
@@ -57,16 +61,20 @@
         <div class="grid grid-cols-2 gap-3">
           <template x-for="i in byCat(c.k)" :key="i.id">
             <div class="rounded-2xl bg-white dark:bg-slate-800 shadow-sm p-3 border-l-4 space-y-2" :class="stOf(i).bd">
-              <div class="flex gap-2 items-center cursor-pointer" @click="edit(i)">
+              <div class="flex gap-2 items-center" @click="edit(i)">
                 <div class="w-14 h-14 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-2xl overflow-hidden">
                   <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
                   <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
                 </div>
-                <div class="min-w-0"><p class="font-semibold leading-tight break-words" x-text="i.name"></p>
-                  <p class="text-[11px] opacity-60" x-text="i.lastOpened?'แกะล่าสุด '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></p></div>
+                <div class="min-w-0">
+                  <p class="font-semibold leading-tight break-words" x-text="i.name"></p>
+                  <p class="text-[11px] opacity-60" x-text="i.lastOpened?'แกะล่าสุด '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></p>
+                </div>
               </div>
               <div class="flex gap-1">
-                <template x-for="s in sts" :key="s.k"><button type="button" @click="save(i.id,{status:s.k})" class="flex-1 h-9 rounded-lg" :class="(i.status||'high')===s.k?s.bg+' ring-2 ring-offset-1 ring-slate-400 dark:ring-offset-slate-800':s.bg+' opacity-25'" :aria-label="s.n"></button></template>
+                <template x-for="s in sts" :key="s.k">
+                  <button type="button" @click="save(i.id,{status:s.k})" class="flex-1 h-9 rounded-lg" :class="(i.status||'high')===s.k?s.bg+' ring-2 ring-offset-1 ring-slate-400 dark:ring-offset-slate-800':s.bg+' opacity-25'" :aria-label="s.n"></button>
+                </template>
               </div>
               <div class="flex items-center justify-between">
                 <button type="button" @click="dec(i)" class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 text-xl font-bold">−</button>
@@ -92,7 +100,9 @@
       <div class="rounded-2xl bg-white dark:bg-slate-800 shadow-sm p-3 flex items-center gap-3" :class="i.inCart&&'opacity-60'">
         <input type="checkbox" :checked="!!i.inCart" @change="save(i.id,{inCart:$event.target.checked})" class="w-7 h-7 accent-pink-400 shrink-0">
         <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xl overflow-hidden">
-          <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" alt=""></template><template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template></div>
+          <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" alt=""></template>
+          <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
+        </div>
         <div class="flex-1 min-w-0">
           <p class="font-semibold leading-tight break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
           <p class="text-xs opacity-60">เหลือ <span x-text="i.qty||0"></span> · ฿<span x-text="fmt(i.price||0)"></span>/ชิ้น = ฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
@@ -106,7 +116,9 @@
     </template>
     <select @change="if($event.target.value){save($event.target.value,{onList:true,buy:1});$event.target.value=''}" class="w-full rounded-xl border p-3 dark:bg-slate-800 dark:border-slate-700">
       <option value="">＋ เพิ่มรายการจากสต็อกเข้าลิสต์…</option>
-      <template x-for="i in list.filter(x=>!onList(x))" :key="i.id"><option :value="i.id" x-text="i.name"></option></template>
+      <template x-for="i in list.filter(x=>!onList(x))" :key="i.id">
+        <option :value="i.id" x-text="i.name"></option>
+      </template>
     </select>
     <button type="button" @click="restock()" :disabled="!shopList.some(i=>i.inCart)" class="w-full py-4 rounded-2xl bg-pink-400 disabled:opacity-40 text-white font-bold text-lg">✅ ยืนยันการซื้อ (Restock)</button>
   </section>
@@ -114,11 +126,12 @@
   <!-- SETTINGS -->
   <section x-show="tab==='set'" class="p-3 space-y-4">
     <div class="rounded-2xl bg-white dark:bg-slate-800 p-4 space-y-2">
-      <p class="font-semibold">รหัสบ้าน (อย่างน้อย 8 ตัวอักษร)</p>
+      <p class="font-semibold">รหัสบ้าน</p>
       <input x-model="setup.code" class="w-full rounded-xl border p-3 dark:bg-slate-900 dark:border-slate-700">
       <div class="flex gap-2">
         <button type="button" @click="navigator.clipboard.writeText(code).then(()=>flash('คัดลอกแล้ว'))" class="flex-1 py-3 rounded-xl border">📋 คัดลอก</button>
-        <button type="button" @click="saveSetup()" class="flex-1 py-3 rounded-xl bg-pink-400 text-white">เปลี่ยนรหัส</button></div>
+        <button type="button" @click="saveSetup()" class="flex-1 py-3 rounded-xl bg-pink-400 text-white">เปลี่ยนรหัส</button>
+      </div>
     </div>
     <div class="rounded-2xl bg-white dark:bg-slate-800 p-4 space-y-2">
       <p class="font-semibold">Firebase Config</p>
@@ -148,7 +161,7 @@
     <button type="button" @click="tab='set'" class="py-3 text-sm" :class="tab==='set'&&'text-pink-400 font-bold'">⚙️<br>ตั้งค่า</button>
   </nav>
 
-  <!-- ฟอร์มสินค้า -->
+  <!-- ฟอร์มสินค้า (แก้ไขแล้ว: ไม่มี <template> เปล่าซ้อนชั้น) -->
   <div x-show="!!f" class="fixed inset-0 z-40 bg-black/50 flex items-end" @click.self="f=null">
     <div x-if="!!f" class="w-full max-h-[92vh] overflow-y-auto rounded-t-3xl bg-white dark:bg-slate-800 p-4 space-y-3 pb-safe">
       <div class="space-y-3">
@@ -212,16 +225,23 @@
 
   <!-- ผลสแกนเจอสินค้าเดิม -->
   <div x-show="hit" class="fixed inset-0 z-50 bg-black/60 flex items-end" @click.self="hit=null">
-    <template x-if="hit&&items[hit]"><div class="w-full rounded-t-3xl bg-white dark:bg-slate-800 p-5 space-y-4 pb-safe">
-      <p class="text-xs opacity-60">พบในสต็อก</p>
-      <p class="text-xl font-bold" x-text="items[hit].name"></p>
-      <div class="flex gap-2"><template x-for="s in sts" :key="s.k"><button type="button" @click="save(hit,{status:s.k})" class="flex-1 py-4 rounded-xl text-white" :class="s.bg+((items[hit].status||'high')===s.k?' ring-2 ring-offset-2 ring-slate-500':' opacity-30')" x-text="s.n"></button></template></div>
-      <div class="flex items-center justify-center gap-6">
-        <button type="button" @click="dec({id:hit,...items[hit]})" class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-700 text-3xl">−</button>
-        <span class="text-4xl font-bold" x-text="items[hit].qty||0"></span>
-        <button type="button" @click="save(hit,{qty:(items[hit].qty||0)+1})" class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-700 text-3xl">＋</button></div>
-      <button type="button" @click="hit=null" class="w-full py-4 rounded-2xl bg-pink-400 text-white font-bold">เสร็จ</button>
-    </div></template>
+    <template x-if="hit&&items[hit]">
+      <div class="w-full rounded-t-3xl bg-white dark:bg-slate-800 p-5 space-y-4 pb-safe">
+        <p class="text-xs opacity-60">พบในสต็อก</p>
+        <p class="text-xl font-bold" x-text="items[hit].name"></p>
+        <div class="flex gap-2">
+          <template x-for="s in sts" :key="s.k">
+            <button type="button" @click="save(hit,{status:s.k})" class="flex-1 py-4 rounded-xl text-white" :class="s.bg+((items[hit].status||'high')===s.k?' ring-2 ring-offset-2 ring-slate-500':' opacity-30')" x-text="s.n"></button>
+          </template>
+        </div>
+        <div class="flex items-center justify-center gap-6">
+          <button type="button" @click="dec({id:hit,...items[hit]})" class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-700 text-3xl">−</button>
+          <span class="text-4xl font-bold" x-text="items[hit].qty||0"></span>
+          <button type="button" @click="save(hit,{qty:(items[hit].qty||0)+1})" class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-700 text-3xl">＋</button>
+        </div>
+        <button type="button" @click="hit=null" class="w-full py-4 rounded-2xl bg-pink-400 text-white font-bold">เสร็จ</button>
+      </div>
+    </template>
   </div>
 
   <div x-show="toast" x-transition class="fixed top-16 inset-x-0 z-50 flex justify-center pointer-events-none"><span class="px-4 py-2 rounded-full bg-slate-800 text-white text-sm shadow" x-text="toast"></span></div>
@@ -266,4 +286,96 @@ Alpine.data('app', () => ({
   },
   base(){return 'households/'+this.code+'/';},
   flash(m){this.toast=m;setTimeout(()=>this.toast='',2200);},
-  parseCfg(s){ const m=s.match(/\{[^{}]*apiKey[^{}]*\}/); if(!m) throw Error('ไม่พบ apiKey ใน config'); return
+  parseCfg(s){ const m=s.match(/\{[^{}]*apiKey[^{}]*\}/); if(!m) throw Error('ไม่พบ apiKey ใน config'); return new Function('return '+m[0])(); },
+  saveSetup(){
+    try{
+      const code=this.setup.code.trim(); if(!code) throw Error('กรอกรหัสบ้าน');
+      if(code.length<8) throw Error('รหัสบ้านต้องยาวอย่างน้อย 8 ตัวอักษร');
+      if(/[.#$\[\]\/]/.test(code)) throw Error('รหัสบ้านห้ามมี . # $ [ ] /');
+      const cfg=this.setup.cfg.trim()?this.parseCfg(this.setup.cfg):DEFAULT_CFG;
+      if(!cfg||!cfg.databaseURL) throw Error('Config ต้องมี databaseURL');
+      localStorage.setItem('roomCode',code); localStorage.setItem('fbcfg',JSON.stringify(cfg)); location.reload();
+    }catch(e){this.setup.err=e.message||'Config ไม่ถูกต้อง';}
+  },
+  get list(){return Object.entries(this.items).map(([id,v])=>({id,...v}));},
+  get filtered(){const q=this.q.trim().toLowerCase();
+    return this.list.filter(i=>(this.cat==='all'||i.cat===this.cat)&&(this.st==='all'||(i.status||'high')===this.st)&&(!q||(i.name||'').toLowerCase().includes(q)||(i.barcode||'').includes(q))).sort((a,b)=>(a.name||'').localeCompare(b.name||'','th'));},
+  byCat(k){return this.filtered.filter(i=>(i.cat||'other')===k);},
+  catOf(k){return this.cats.find(c=>c.k===k)||this.cats[4];},
+  stOf(i){return this.sts.find(s=>s.k===(i.status||'high'));},
+  onList(i){return i.status==='low'||!!i.onList||(i.min>0&&(i.qty||0)<=i.min);},
+  get shopList(){return this.list.filter(i=>this.onList(i)).sort((a,b)=>!!a.inCart-!!b.inCart||(a.name||'').localeCompare(b.name||'','th'));},
+  get total(){return this.shopList.reduce((s,i)=>s+(i.price||0)*(i.buy||1),0);},
+  get totalChecked(){return this.shopList.filter(i=>i.inCart).reduce((s,i)=>s+(i.price||0)*(i.buy||1),0);},
+  fmt(n){return Number(n).toLocaleString('th-TH',{maximumFractionDigits:2});},
+  ago(t){const d=Math.floor((Date.now()-t)/864e5);return d<=0?'วันนี้':d+' วันก่อน';},
+
+  save(id,patch){ update(ref(db,this.base()+'items/'+id),patch).catch(e=>this.flash('บันทึกไม่ได้: '+e.code)); },
+  dec(i){ const q=Math.max(0,(i.qty||0)-1); this.save(i.id,{qty:q,lastOpened:Date.now()}); },
+  add(pre={}){ this.f={name:'',cat:'other',barcode:'',img:'',imgUrl:'',qty:1,min:0,price:0,status:'high',...pre}; },
+  edit(i){ this.f={...i,imgUrl:/^https?:/.test(i.img||'')?i.img:''}; },
+  commit(){
+    const f=this.f; if(!f||!f.name||!f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อน');
+    const data={name:f.name.trim(),cat:f.cat,barcode:(f.barcode||'').trim(),img:f.img||'',qty:Number(f.qty)||0,min:Number(f.min)||0,price:Number(f.price)||0,status:f.status||'high'};
+    if(f.id) this.save(f.id,data); else set(push(ref(db,this.base()+'items')),{...data,buy:1,createdAt:Date.now()});
+    this.f=null;
+  },
+  del(){ if(confirm('ลบสินค้านี้?')){ set(ref(db,this.base()+'items/'+this.f.id),null); this.f=null; } },
+  restock(){
+    const up={}; this.shopList.filter(i=>i.inCart).forEach(i=>{const p=i.id+'/';up[p+'qty']=(i.qty||0)+(i.buy||1);up[p+'status']='high';up[p+'onList']=false;up[p+'inCart']=false;up[p+'buy']=1;});
+    update(ref(db,this.base()+'items'),up).then(()=>this.flash('เติมสต็อกแล้ว ✅'));
+  },
+
+  // รูปภาพ
+  urlImg(){ if(this.f) this.f.img=this.f.imgUrl.trim(); },
+  pickImg(ev){ const file=ev.target.files[0]; if(!file||!this.f) return;
+    const img=new Image(); img.onload=()=>{
+      const S=200,c=document.createElement('canvas'),x=c.getContext('2d'),m=Math.min(img.width,img.height),sx=(img.width-m)/2,sy=(img.height-m)/2;
+      c.width=c.height=Math.min(S,m); x.drawImage(img,sx,sy,m,m,0,0,c.width,c.height);
+      this.f.img=c.toDataURL('image/jpeg',0.6); this.f.imgUrl=''; URL.revokeObjectURL(img.src);
+    }; img.src=URL.createObjectURL(file); ev.target.value=''; },
+
+  // บาร์โค้ด
+  openScan(forForm=false){
+    this.scanForForm=forForm; this.scan=true; this.scanMsg='เล็งบาร์โค้ดให้อยู่ในกรอบ';
+    this.$nextTick(async()=>{
+      try{
+        this.scanner=new Html5Qrcode('reader');
+        await this.scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:140}},code=>this.onScan(code),()=>{});
+      }catch(e){this.scanMsg='เปิดกล้องไม่ได้ (ต้องเปิดผ่าน https และอนุญาตกล้อง)';}
+    });
+  },
+  async closeScan(){ try{ if(this.scanner){ await this.scanner.stop(); this.scanner.clear(); } }catch{} this.scanner=null; this.scan=false; },
+  async onScan(code){
+    await this.closeScan();
+    if(this.scanForForm&&this.f){ this.f.barcode=code; return; }
+    const found=this.list.find(i=>i.barcode===code);
+    if(found) this.hit=found.id; else this.add({barcode:code});
+  },
+
+  // สำรองข้อมูล
+  exportJson(){
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),items:this.items},null,1)],{type:'application/json'}));
+    a.download='stocky-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  },
+  importJson(ev){ const file=ev.target.files[0]; if(!file) return;
+    file.text().then(t=>{ const d=JSON.parse(t); if(!d.items) throw Error(); if(!confirm('เขียนทับสินค้าทั้งหมดด้วยไฟล์นี้?')) return;
+      return set(ref(db,this.base()+'items'),d.items).then(()=>this.flash('นำเข้าสำเร็จ')); }).catch(()=>this.flash('ไฟล์ไม่ถูกต้อง')); ev.target.value=''; },
+}));
+Alpine.start();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
+```[cite: 3]
+
+### วิธีอัปเดตและตรวจสอบหลังวางโค้ดใหม่
+1. นำโค้ดด้านบนไปทับไฟล์ `index.html` ใน Repository แล้ว Push/Deploy บน GitHub Pages หรือ Netlify ให้เรียบร้อย[cite: 3]
+2. เปิดหน้าเว็บผ่านเบราว์เซอร์ (แนะนำให้กด Hard Refresh หรือล้าง Cache ของหน้าเว็บเดิม 1 ครั้งเพื่อให้ได้ไฟล์ `index.html` ตัวใหม่)
+3. ตรวจสอบว่าไฟสถานะด้านบนขวาขึ้นว่า **ออนไลน์** และลองกดปุ่ม `＋` เพื่อเพิ่มสินค้าใหม่ 1 รายการ
+
+<ElicitationsGroup message="หากอัปเดตไฟล์ index.html แล้วยังเจอจุดติดขัด เลือกหัวข้อที่ต้องการได้เลยครับ:">
+  <Elicitation label="สถานะยังเป็นออฟไลน์" query="อัปเดตไฟล์ index.html ใหม่แล้ว แต่จุดสถานะด้านบนยังขึ้นว่าออฟไลน์และบันทึกข้อมูลไม่เข้า Firebase ครับ"/>
+  <Elicitation label="เช็กไฟล์ manifest และ sw.js" query="ไฟล์ index.html เสร็จแล้ว อยากเช็กตัวอย่างโค้ด manifest.json และ sw.js ที่เข้ากันเพื่อทำ PWA บนมือถือครับ"/>
+  <Elicitation label="สแกนบาร์โค้ดบนมือถือ" query="เพิ่มสินค้าได้แล้ว แต่ตอนกดปุ่มกล้องสแกนบาร์โค้ดบนมือถือมีจุดไหนที่ควรระวังเพิ่มเติมไหมครับ"/>
+</ElicitationsGroup>
