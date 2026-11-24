@@ -581,4 +581,113 @@ Alpine.data('app', () => ({
       price: Number(f.price) || 0,
       status: f.status || 'high'
     };
-    if(f.id) this.save(
+    if(f.id) this.save(f.id, data);
+    else set(push(ref(db, this.base() + 'items')), {...data, buy: 1, createdAt: Date.now()});
+    this.f = null;
+  },
+  del(){
+    if(confirm('ลบสินค้านี้?')){
+      set(ref(db, this.base() + 'items/' + this.f.id), null);
+      this.f = null;
+    }
+  },
+  toggleAllCart(val){
+    const up = {};
+    this.shopList.forEach(i => { up[i.id + '/inCart'] = !!val; });
+    if(Object.keys(up).length) update(ref(db, this.base() + 'items'), up);
+  },
+  restock(){
+    const up = {};
+    this.shopList.filter(i => i.inCart).forEach(i => {
+      const p = i.id + '/';
+      up[p + 'qty'] = (Number(i.qty) || 0) + (Number(i.buy) || 1);
+      up[p + 'status'] = 'high';
+      up[p + 'onList'] = false;
+      up[p + 'inCart'] = false;
+      up[p + 'buy'] = 1;
+    });
+    update(ref(db, this.base() + 'items'), up).then(() => this.flash('เติมสต็อกแล้ว ✅'));
+  },
+
+  // รูปภาพ
+  urlImg(){ if(this.f) this.f.img = (this.f.imgUrl || '').trim(); },
+  pickImg(ev){
+    const file = ev.target.files[0];
+    if(!file || !this.f) return;
+    const img = new Image();
+    img.onload = () => {
+      const S = 200, c = document.createElement('canvas'), x = c.getContext('2d');
+      const m = Math.min(img.width, img.height);
+      const sx = (img.width - m) / 2, sy = (img.height - m) / 2;
+      c.width = c.height = Math.min(S, m);
+      x.drawImage(img, sx, sy, m, m, 0, 0, c.width, c.height);
+      this.f.img = c.toDataURL('image/jpeg', 0.6);
+      this.f.imgUrl = '';
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+    ev.target.value = '';
+  },
+
+  // บาร์โค้ด
+  openScan(forForm = false){
+    this.scanForForm = forForm;
+    this.scan = true;
+    this.scanMsg = 'เล็งบาร์โค้ดให้อยู่ในกรอบ';
+    this._handlingScan = false;
+    this.$nextTick(async () => {
+      try{
+        this.scanner = new Html5Qrcode('reader');
+        await this.scanner.start({facingMode: 'environment'}, {fps: 10, qrbox: {width: 260, height: 140}}, code => this.onScan(code), () => {});
+      }catch(e){
+        this.scanMsg = 'เปิดกล้องไม่ได้ (ต้องเปิดผ่าน https และอนุญาตกล้อง)';
+      }
+    });
+  },
+  async closeScan(){
+    const sc = this.scanner;
+    this.scanner = null;
+    this.scan = false;
+    try{ if(sc){ await sc.stop(); await sc.clear(); } }catch{}
+  },
+  async onScan(rawCode){
+    if(this._handlingScan) return;
+    this._handlingScan = true;
+    const code = String(rawCode || '').trim();
+    await this.closeScan();
+    if(!code){ this._handlingScan = false; return; }
+    if(this.scanForForm && this.f){ this.f.barcode = code; this._handlingScan = false; return; }
+    const found = this.list.find(i => String(i.barcode || '').trim() === code);
+    if(found){
+      this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
+    }else{
+      this.flash('ไม่พบบาร์โค้ด ' + code + ' ในสต็อก');
+      this.add({barcode: code});
+      this._handlingScan = false;
+    }
+  },
+
+  // สำรองข้อมูล
+  exportJson(){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({version: 1, exportedAt: new Date().toISOString(), items: this.items}, null, 1)], {type: 'application/json'}));
+    a.download = 'stocky-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+  },
+  importJson(ev){
+    const file = ev.target.files[0];
+    if(!file) return;
+    file.text().then(t => {
+      const d = JSON.parse(t);
+      if(!d.items) throw Error();
+      if(!confirm('เขียนทับสินค้าทั้งหมดด้วยไฟล์นี้?')) return;
+      return set(ref(db, this.base() + 'items'), d.items).then(() => this.flash('นำเข้าสำเร็จ'));
+    }).catch(() => this.flash('ไฟล์ไม่ถูกต้อง'));
+    ev.target.value = '';
+  }
+}));
+Alpine.start();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
