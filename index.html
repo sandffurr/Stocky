@@ -69,9 +69,9 @@ button:active{transform:scale(.94)}
 </template>
 
 <template x-if="ready">
-<div class="pb-36">
+<div class="pb-32">
   <!-- HEADER -->
-  <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-3 flex items-center justify-between" :class="ui.header" :style="'background-color:'+ui.headerBg">
+  <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-2.5 flex items-center justify-between" :class="ui.header" :style="'background-color:'+ui.headerBg">
     <div class="flex items-center gap-2">
       <img src="icon-180.png" alt="Stocky" class="w-7 h-7 rounded-xl object-cover">
       <span class="font-extrabold text-lg tracking-tight" :class="ui.accentText">Stocky</span>
@@ -86,34 +86,34 @@ button:active{transform:scale(.94)}
   </header>
 
   <!-- MyStock -->
-  <section x-show="tab==='inv'" class="p-3 space-y-3 max-w-2xl mx-auto">
+  <section x-show="tab==='inv'" class="p-2.5 space-y-2.5 max-w-4xl mx-auto">
     <!-- แถบสรุปสถานะอัตโนมัติ 3 ระดับ -->
     <div class="grid grid-cols-4 gap-1.5">
-      <button type="button" @click="st='all'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='all'?ui.chipActive:ui.card">
-        <span class="block text-base font-extrabold" x-text="list.length"></span>
-        <span class="block text-[11px] opacity-75">ทั้งหมด</span>
+      <button type="button" @click="st='all'" class="rounded-2xl border py-2 px-1.5 text-center transition" :class="st==='all'?ui.chipActive:ui.card">
+        <span class="block text-sm font-extrabold leading-tight" x-text="list.length"></span>
+        <span class="block text-[10px] opacity-75">ทั้งหมด</span>
       </button>
-      <button type="button" @click="st='ok'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='ok'?'bg-emerald-500 border-emerald-500 text-white shadow-xs':ui.card">
-        <span class="block text-base font-extrabold" :class="st!=='ok'&&'text-emerald-500'" x-text="countByState('ok')"></span>
-        <span class="block text-[11px] opacity-80">มีของอยู่</span>
+      <button type="button" @click="st='ok'" class="rounded-2xl border py-2 px-1.5 text-center transition" :class="st==='ok'?'bg-emerald-500 border-emerald-500 text-white shadow-xs':ui.card">
+        <span class="block text-sm font-extrabold leading-tight" :class="st!=='ok'&&'text-emerald-500'" x-text="countByState('ok')"></span>
+        <span class="block text-[10px] opacity-80">มีของอยู่</span>
       </button>
-      <button type="button" @click="st='low'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='low'?'bg-amber-400 border-amber-400 text-slate-900 shadow-xs':ui.card">
-        <span class="block text-base font-extrabold" :class="st!=='low'&&'text-amber-500'" x-text="countByState('low')"></span>
-        <span class="block text-[11px] opacity-80">ใกล้หมด</span>
+      <button type="button" @click="st='low'" class="rounded-2xl border py-2 px-1.5 text-center transition" :class="st==='low'?'bg-amber-400 border-amber-400 text-slate-900 shadow-xs':ui.card">
+        <span class="block text-sm font-extrabold leading-tight" :class="st!=='low'&&'text-amber-500'" x-text="countByState('low')"></span>
+        <span class="block text-[10px] opacity-80">ใกล้หมด</span>
       </button>
-      <button type="button" @click="st='out'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='out'?'bg-rose-500 border-rose-500 text-white shadow-xs':ui.card">
-        <span class="block text-base font-extrabold" :class="st!=='out'&&'text-rose-500'" x-text="countByState('out')"></span>
-        <span class="block text-[11px] opacity-80">หมดแล้ว</span>
+      <button type="button" @click="st='out'" class="rounded-2xl border py-2 px-1.5 text-center transition" :class="st==='out'?'bg-rose-500 border-rose-500 text-white shadow-xs':ui.card">
+        <span class="block text-sm font-extrabold leading-tight" :class="st!=='out'&&'text-rose-500'" x-text="countByState('out')"></span>
+        <span class="block text-[10px] opacity-80">หมดแล้ว</span>
       </button>
     </div>
 
     <!-- ค้นหา + ตัวเรียงลำดับ -->
-    <div class="flex gap-2">
+    <div class="flex gap-1.5">
       <div class="relative flex-1 min-w-0">
-        <input x-model="q" type="search" placeholder="🔍 ค้นหาชื่อ หมายเหตุ หรือบาร์โค้ด..." class="w-full rounded-2xl border pl-4 pr-9 py-3 text-sm outline-none" :class="ui.input">
-        <button type="button" x-show="q" @click="q=''" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 text-sm px-1.5">✕</button>
+        <input x-model="q" type="search" placeholder="🔍 ค้นหาชื่อ หมายเหตุ หรือบาร์โค้ด..." class="w-full rounded-2xl border pl-3.5 pr-8 py-2.5 text-sm outline-none" :class="ui.input">
+        <button type="button" x-show="q" @click="q=''" class="absolute right-2.5 top-1/2 -translate-y-1/2 opacity-60 text-xs px-1">✕</button>
       </div>
-      <select x-model="sortBy" class="rounded-2xl border px-3 py-3 text-xs font-semibold outline-none shrink-0" :class="ui.input" aria-label="เรียงลำดับ">
+      <select x-model="sortBy" class="rounded-2xl border px-2.5 py-2.5 text-xs font-semibold outline-none shrink-0" :class="ui.input" aria-label="เรียงลำดับ">
         <option value="name">เรียง: ชื่อ (ก-ฮ)</option>
         <option value="stock">เรียง: ใกล้หมด/หมดก่อน</option>
         <option value="exp">เรียง: หมดอายุก่อน</option>
@@ -121,73 +121,73 @@ button:active{transform:scale(.94)}
     </div>
 
     <!-- แถบหมวดหมู่ + ปุ่มเพิ่มหมวดเอง -->
-    <div class="flex gap-2 overflow-x-auto pb-1 items-center">
-      <button type="button" @click="cat='all'" class="shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border" :class="cat==='all'?ui.chipActive:ui.chip">✨ ทั้งหมด</button>
+    <div class="flex gap-1.5 overflow-x-auto pb-0.5 items-center">
+      <button type="button" @click="cat='all'" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border" :class="cat==='all'?ui.chipActive:ui.chip">✨ ทั้งหมด</button>
       <template x-for="c in allCats" :key="c.k">
-        <button type="button" @click="cat=c.k" class="shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border" :class="cat===c.k?ui.chipActive:ui.chip" x-text="c.e+' '+c.n"></button>
+        <button type="button" @click="cat=c.k" class="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border" :class="cat===c.k?ui.chipActive:ui.chip" x-text="c.e+' '+c.n"></button>
       </template>
-      <button type="button" @click="openCatModal()" class="shrink-0 px-3 py-2 rounded-full text-xs font-bold border border-dashed" :class="ui.softBtn">＋ หมวด</button>
+      <button type="button" @click="openCatModal()" class="shrink-0 px-2.5 py-1.5 rounded-full text-xs font-bold border border-dashed" :class="ui.softBtn">＋ หมวด</button>
     </div>
 
     <!-- Empty State -->
-    <div x-show="!filtered.length" class="rounded-3xl border p-10 text-center space-y-2" :class="ui.card">
-      <p class="text-4xl">🧺</p>
+    <div x-show="!filtered.length" class="rounded-3xl border p-8 text-center space-y-1.5" :class="ui.card">
+      <p class="text-3xl">🧺</p>
       <p class="font-bold text-sm">ไม่พบรายการในหน้านี้</p>
       <p class="text-xs opacity-60">กดปุ่ม ＋ มุมขวาล่างเพื่อเพิ่มของใช้ชิ้นใหม่ได้เลย</p>
     </div>
 
     <!-- รายการแยกตามหมวดหมู่ -->
     <template x-for="c in allCats" :key="c.k">
-      <div x-show="byCat(c.k).length" class="space-y-2">
-        <div class="flex items-center justify-between pt-1.5 px-1">
-          <h2 class="font-bold text-sm flex items-center gap-1.5">
-            <span class="w-6 h-6 rounded-lg flex items-center justify-center text-sm border" :class="ui.thumb" x-text="c.e"></span>
+      <div x-show="byCat(c.k).length" class="space-y-1.5">
+        <div class="flex items-center justify-between pt-1 px-0.5">
+          <h2 class="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs border" :class="ui.thumb" x-text="c.e"></span>
             <span x-text="c.n"></span>
           </h2>
-          <span class="text-[11px] px-2 py-0.5 rounded-full font-medium" :class="ui.pill" x-text="byCat(c.k).length+' ชิ้น'"></span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold" :class="ui.pill" x-text="byCat(c.k).length+' ชิ้น'"></span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           <template x-for="i in byCat(c.k)" :key="i.id">
-            <div class="rounded-3xl border p-3.5 flex flex-col justify-between gap-3 shadow-xs relative overflow-hidden" :class="ui.card">
+            <div class="rounded-2xl border p-2.5 flex flex-col justify-between gap-2 shadow-xs relative overflow-hidden" :class="ui.card">
               <div class="absolute top-0 inset-x-0 h-1" :class="stateMeta(i).bar"></div>
 
-              <!-- ส่วนบน: รูป + ชื่อ + สถานะ + หมายเหตุ + วันหมดอายุ -->
-              <div class="flex gap-3 items-start cursor-pointer pt-0.5" @click="edit(i)">
-                <div class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+              <!-- ส่วนบน: รูปใหญ่ + ข้อมูลกระชับ -->
+              <div class="flex gap-2.5 items-center cursor-pointer pt-0.5" @click="edit(i)">
+                <div class="w-20 h-20 shrink-0 rounded-2xl flex items-center justify-center text-3xl overflow-hidden border" :class="ui.thumb">
                   <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
                   <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
                 </div>
+
                 <div class="min-w-0 flex-1 space-y-1">
-                  <div class="flex items-start justify-between gap-1.5">
-                    <p class="font-bold text-sm leading-snug break-words line-clamp-2" x-text="i.name"></p>
-                    <span x-show="i.price>0" class="text-xs font-bold shrink-0 opacity-80">฿<span x-text="fmt(i.price)"></span></span>
+                  <div class="flex items-start justify-between gap-1">
+                    <p class="font-bold text-[13px] leading-snug break-words line-clamp-2" x-text="i.name"></p>
+                    <span x-show="i.price>0" class="text-[11px] font-bold shrink-0 opacity-80">฿<span x-text="fmt(i.price)"></span></span>
                   </div>
 
                   <div class="flex flex-wrap gap-1">
-                    <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold" :class="stateMeta(i).badge" x-text="stateMeta(i).label"></span>
-                    <span x-show="expMeta(i)" class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold" :class="expMeta(i)?.badge" x-text="expMeta(i)?.label"></span>
+                    <span class="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none" :class="stateMeta(i).badge" x-text="stateMeta(i).label"></span>
+                    <span x-show="expMeta(i)" class="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none" :class="expMeta(i)?.badge" x-text="expMeta(i)?.label"></span>
                   </div>
 
-                  <p x-show="i.note" class="text-[11px] opacity-70 truncate" x-text="'📝 '+i.note"></p>
+                  <p x-show="i.note" class="text-[10px] opacity-70 truncate" x-text="'📝 '+i.note"></p>
+
+                  <div class="flex items-center justify-between text-[10px] opacity-60">
+                    <span x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></span>
+                    <span x-show="Number(i.min)>0">เตือน ≤ <strong x-text="i.min"></strong></span>
+                  </div>
                 </div>
               </div>
 
-              <!-- ข้อมูลเสริม -->
-              <div class="flex items-center justify-between text-[11px] opacity-60 px-1 border-t pt-2 border-current/10">
-                <span x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></span>
-                <span x-show="Number(i.min)>0">เตือนเมื่อ ≤ <strong x-text="i.min"></strong></span>
-              </div>
-
-              <!-- ส่วนควบคุมจำนวน + ปุ่มใส่ลิสต์ซื้อ -->
-              <div class="flex items-center gap-2">
-                <div class="flex items-center justify-between gap-1.5 rounded-2xl p-1 border shrink-0" :class="ui.softBtn">
-                  <button type="button" @click="dec(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
-                  <span class="min-w-7 text-center text-base font-extrabold" x-text="Number(i.qty)||0"></span>
-                  <button type="button" @click="inc(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
+              <!-- ส่วนควบคุมจำนวน + ปุ่มใส่ลิสต์ซื้อ แบบกะทัดรัด -->
+              <div class="flex items-center gap-1.5 pt-1 border-t border-current/10">
+                <div class="flex items-center justify-between gap-1 rounded-xl p-0.5 border shrink-0" :class="ui.softBtn">
+                  <button type="button" @click="dec(i)" class="w-7 h-7 rounded-lg text-base font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
+                  <span class="min-w-6 text-center text-sm font-extrabold" x-text="Number(i.qty)||0"></span>
+                  <button type="button" @click="inc(i)" class="w-7 h-7 rounded-lg text-base font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
                 </div>
 
-                <button type="button" @click="save(i.id,{onList:!onList(i),buy:i.buy||1})" class="flex-1 h-11 px-2.5 rounded-2xl text-xs font-bold border truncate" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 ในลิสต์ ('+(i.buy||1)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
+                <button type="button" @click="save(i.id,{onList:!onList(i),buy:i.buy||1})" class="flex-1 h-8 px-2 rounded-xl text-[11px] font-bold border truncate" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 ในลิสต์ ('+(i.buy||1)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
               </div>
             </div>
           </template>
@@ -234,7 +234,7 @@ button:active{transform:scale(.94)}
       <template x-for="i in shopList" :key="i.id">
         <div class="rounded-3xl border p-3 flex items-center gap-3 shadow-xs transition" :class="[ui.card, i.inCart&&'opacity-60']">
           <input type="checkbox" :checked="!!i.inCart" @change="save(i.id,{inCart:$event.target.checked})" class="w-6 h-6 rounded-lg shrink-0 cursor-pointer" :class="ui.accentCheck">
-          <div class="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-xl overflow-hidden border" :class="ui.thumb">
+          <div class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
             <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" alt=""></template>
             <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
           </div>
@@ -349,17 +349,17 @@ button:active{transform:scale(.94)}
   </section>
 
   <!-- ปุ่มลอย -->
-  <div x-show="tab==='inv'" class="fixed right-4 bottom-24 z-20 flex flex-col gap-3" style="margin-bottom:env(safe-area-inset-bottom)">
-    <button type="button" @click="openScan()" class="w-14 h-14 rounded-full text-2xl shadow-lg flex items-center justify-center border" :class="ui.fabSec" title="สแกนบาร์โค้ด">📷</button>
-    <button type="button" @click="add()" class="w-14 h-14 rounded-full text-3xl shadow-lg flex items-center justify-center font-bold" :class="ui.primary" title="เพิ่มของใช้">＋</button>
+  <div x-show="tab==='inv'" class="fixed right-4 bottom-20 z-20 flex flex-col gap-2.5" style="margin-bottom:env(safe-area-inset-bottom)">
+    <button type="button" @click="openScan()" class="w-12 h-12 rounded-full text-xl shadow-lg flex items-center justify-center border" :class="ui.fabSec" title="สแกนบาร์โค้ด">📷</button>
+    <button type="button" @click="add()" class="w-13 h-13 w-12 h-12 rounded-full text-2xl shadow-lg flex items-center justify-center font-bold" :class="ui.primary" title="เพิ่มของใช้">＋</button>
   </div>
 
   <!-- แท็บบาร์ -->
   <nav class="fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-3 pb-safe" :class="ui.nav" :style="'background-color:'+ui.navBg">
-    <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-lg">🏠</span><span>MyStock</span></button>
-    <button type="button" @click="tab='shop'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-60'"><span class="text-lg">🛒</span><span>ต้องซื้อ</span>
-      <span x-show="shopList.length" class="absolute top-1.5 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
-    <button type="button" @click="tab='set'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-60'"><span class="text-lg">⚙️</span><span>ตั้งค่า</span></button>
+    <button type="button" @click="tab='inv'" class="py-2 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-base">🏠</span><span>MyStock</span></button>
+    <button type="button" @click="tab='shop'" class="py-2 text-xs font-semibold flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-60'"><span class="text-base">🛒</span><span>ต้องซื้อ</span>
+      <span x-show="shopList.length" class="absolute top-1 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
+    <button type="button" @click="tab='set'" class="py-2 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-60'"><span class="text-base">⚙️</span><span>ตั้งค่า</span></button>
   </nav>
 
   <!-- Modal เพิ่ม/แก้ไขสินค้า -->
@@ -388,7 +388,7 @@ button:active{transform:scale(.94)}
         </div>
 
         <div class="flex gap-3 items-center">
-          <div class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+          <div class="w-20 h-20 shrink-0 rounded-2xl flex items-center justify-center text-3xl overflow-hidden border" :class="ui.thumb">
             <template x-if="f && f.img"><img :src="f.img" class="w-full h-full object-cover" alt=""></template>
             <template x-if="f && !f.img"><span x-text="catOf(f.cat).e"></span></template>
           </div>
