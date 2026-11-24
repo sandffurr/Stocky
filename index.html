@@ -75,7 +75,7 @@ button:active{transform:scale(.94)}
     <div class="flex items-center gap-2">
       <img src="icon-180.png" alt="Stocky" class="w-7 h-7 rounded-xl object-cover">
       <span class="font-extrabold text-lg tracking-tight" :class="ui.accentText">Stocky</span>
-      <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" :class="ui.pill" x-text="{inv:'หน้าคลังของใช้',shop:'ต้องซื้อเพิ่ม',set:'ตั้งค่า'}[tab]"></span>
+      <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" :class="ui.pill" x-text="{inv:'MyStock',shop:'ต้องซื้อเพิ่ม',set:'ตั้งค่า'}[tab]"></span>
     </div>
     <div class="flex items-center gap-2">
       <span class="text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium border" :class="ui.softBtn">
@@ -85,7 +85,7 @@ button:active{transform:scale(.94)}
     </div>
   </header>
 
-  <!-- หน้าคลังของใช้ -->
+  <!-- MyStock -->
   <section x-show="tab==='inv'" class="p-3 space-y-3 max-w-2xl mx-auto">
     <!-- แถบสรุปสถานะอัตโนมัติ 3 ระดับ -->
     <div class="grid grid-cols-4 gap-1.5">
@@ -356,7 +356,7 @@ button:active{transform:scale(.94)}
 
   <!-- แท็บบาร์ -->
   <nav class="fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-3 pb-safe" :class="ui.nav" :style="'background-color:'+ui.navBg">
-    <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-lg">🏠</span><span>หน้าคลังของใช้</span></button>
+    <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-lg">🏠</span><span>MyStock</span></button>
     <button type="button" @click="tab='shop'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-60'"><span class="text-lg">🛒</span><span>ต้องซื้อ</span>
       <span x-show="shopList.length" class="absolute top-1.5 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
     <button type="button" @click="tab='set'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-60'"><span class="text-lg">⚙️</span><span>ตั้งค่า</span></button>
