@@ -18,29 +18,44 @@
 [x-cloak]{display:none!important}
 body{-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top)}
 .pb-safe{padding-bottom:env(safe-area-inset-bottom)}
-button:active{transform:scale(.96)}
+button{transition:transform .14s cubic-bezier(.34,1.56,.64,1),background-color .15s,opacity .15s}
+button:active{transform:scale(.94)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-90px) scale(1.3)}}
+.sparkle{animation:floatUp .95s ease-out forwards}
 </style>
 </head>
-<body class="min-h-screen transition-colors duration-200" :class="ui.body" x-data="app" x-cloak>
+<body class="min-h-screen transition-colors duration-200 selection:bg-pink-300/40" :class="ui.body" x-data="app" x-cloak>
 
 <!-- ตั้งค่าครั้งแรก -->
 <template x-if="!ready">
 <div class="max-w-md mx-auto p-5 space-y-4">
-  <div class="flex items-center justify-between">
-    <h1 class="text-2xl font-bold">🐰 Stocky</h1>
+  <div class="flex items-center justify-between pt-2">
+    <div class="flex items-center gap-2.5">
+      <span class="text-3xl">🐰</span>
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight">Stocky</h1>
+        <p class="text-xs opacity-65">ผู้ช่วยเช็กสต็อกของใช้ในบ้าน</p>
+      </div>
+    </div>
     <div class="flex gap-1.5">
       <template x-for="t in themes" :key="t.k">
         <button type="button" @click="setTheme(t.k)" class="w-7 h-7 rounded-full border-2" :class="[t.dot, theme===t.k?'border-slate-900 dark:border-white scale-110':'border-transparent opacity-60']" :title="t.n"></button>
       </template>
     </div>
   </div>
-  <p class="text-sm opacity-75">ตั้งค่าครั้งแรก: ใส่รหัสบ้าน (อย่างน้อย 8 ตัวอักษร) และวาง Firebase Config</p>
-  <label class="block text-sm font-medium">รหัสบ้าน (ยาวอย่างน้อย 8 ตัวอักษร)
-    <input x-model="setup.code" placeholder="home-secret-9988" class="mt-1 w-full rounded-2xl border p-3.5 outline-none" :class="ui.input"></label>
-  <label class="block text-sm font-medium">Firebase Config
-    <textarea x-model="setup.cfg" rows="7" placeholder='{ apiKey: "...", authDomain: "...", databaseURL: "https://xxx-default-rtdb.firebaseio.com", projectId: "...", appId: "..." }' class="mt-1 w-full rounded-2xl border p-3.5 font-mono text-xs outline-none" :class="ui.input"></textarea></label>
-  <p class="text-red-500 text-sm font-medium" x-text="setup.err"></p>
-  <button type="button" @click="saveSetup()" class="w-full py-4 rounded-2xl font-bold text-lg shadow-sm" :class="ui.primary">เริ่มใช้งาน</button>
+
+  <div class="rounded-3xl border p-4 space-y-3 shadow-xs" :class="ui.card">
+    <p class="text-sm font-semibold">เริ่มต้นใช้งาน 1 นาที ✨</p>
+    <label class="block text-xs font-medium opacity-80">ตั้งรหัสบ้าน (ยาวอย่างน้อย 8 ตัวอักษร เพื่อแชร์ข้อมูลกับคนในบ้าน)
+      <input x-model="setup.code" placeholder="เช่น myhome-2026" class="mt-1.5 w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+    </label>
+    <details class="rounded-2xl border p-3 text-xs" :class="ui.softBtn">
+      <summary class="cursor-pointer font-semibold opacity-80">⚙️ ตั้งค่า Firebase Config (ใช้ค่าเริ่มต้นได้เลย)</summary>
+      <textarea x-model="setup.cfg" rows="6" placeholder='{ apiKey: "...", databaseURL: "..." }' class="mt-2 w-full rounded-xl border p-2.5 font-mono text-[11px] outline-none" :class="ui.input"></textarea>
+    </details>
+    <p x-show="setup.err" class="text-red-500 text-xs font-semibold" x-text="setup.err"></p>
+    <button type="button" @click="saveSetup()" class="w-full py-3.5 rounded-2xl font-bold text-base shadow-sm" :class="ui.primary">เข้าสู่บ้านของเรา 🚀</button>
+  </div>
 </div>
 </template>
 
@@ -49,81 +64,109 @@ button:active{transform:scale(.96)}
   <!-- HEADER -->
   <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-3 flex items-center justify-between" :class="ui.header">
     <div class="flex items-center gap-2">
-      <span class="font-bold text-lg" :class="ui.accentText">🐰 Stocky</span>
-      <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="ui.pill" x-text="{inv:'สต็อกของใช้',shop:'รายการต้องซื้อ',set:'ตั้งค่า'}[tab]"></span>
+      <span class="text-xl">🐰</span>
+      <span class="font-extrabold text-lg tracking-tight" :class="ui.accentText">Stocky</span>
+      <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" :class="ui.pill" x-text="{inv:'คลังของใช้',shop:'ต้องซื้อเพิ่ม',set:'ตั้งค่า'}[tab]"></span>
     </div>
-    <span class="text-xs flex items-center gap-1.5 font-medium" :class="online?'text-emerald-600 dark:text-emerald-400':'opacity-60'">
-      <i class="w-2 h-2 rounded-full" :class="online?'bg-emerald-500':'bg-slate-400'"></i>
-      <span x-text="online?'ออนไลน์':'ออฟไลน์'"></span>
-    </span>
+    <div class="flex items-center gap-2">
+      <span class="text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium border" :class="ui.softBtn">
+        <i class="w-2 h-2 rounded-full" :class="online?'bg-emerald-500 animate-pulse':'bg-slate-400'"></i>
+        <span x-text="online?'ซิงก์แล้ว':'ออฟไลน์'"></span>
+      </span>
+    </div>
   </header>
 
   <!-- INVENTORY -->
   <section x-show="tab==='inv'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <div class="relative">
-      <input x-model="q" type="search" placeholder="🔍 ค้นหาชื่อสินค้า หรือเลขบาร์โค้ด..." class="w-full rounded-2xl border pl-4 pr-9 py-3 outline-none" :class="ui.input">
-      <button type="button" x-show="q" @click="q=''" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 text-sm px-1">✕</button>
-    </div>
-
-    <!-- หมวดหมู่ -->
-    <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-      <button type="button" @click="cat='all'" class="shrink-0 px-3.5 py-2 rounded-full text-sm font-medium border transition" :class="cat==='all'?ui.chipActive:ui.chip">ทั้งหมด</button>
-      <template x-for="c in cats" :key="c.k">
-        <button type="button" @click="cat=c.k" class="shrink-0 px-3.5 py-2 rounded-full text-sm font-medium border transition" :class="cat===c.k?ui.chipActive:ui.chip" x-text="c.e+' '+c.n"></button>
-      </template>
-    </div>
-
-    <!-- ตัวกรองสถานะ -->
+    <!-- แถบสรุปสถานะอัตโนมัติ 3 ระดับ -->
     <div class="grid grid-cols-4 gap-1.5">
-      <button type="button" @click="st='all'" class="py-2 rounded-xl text-xs font-semibold border transition" :class="st==='all'?ui.chipActive:ui.chip">ทั้งหมด</button>
-      <template x-for="s in sts" :key="s.k">
-        <button type="button" @click="st=s.k" class="py-2 rounded-xl text-xs font-semibold border transition" :class="st===s.k?(s.bg+' text-white border-transparent shadow-sm'):ui.chip" x-text="s.n"></button>
-      </template>
+      <button type="button" @click="st='all'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='all'?ui.chipActive:ui.card">
+        <span class="block text-base font-extrabold" x-text="list.length"></span>
+        <span class="block text-[11px] opacity-75">ทั้งหมด</span>
+      </button>
+      <button type="button" @click="st='ok'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='ok'?'bg-emerald-500 border-emerald-500 text-white shadow-xs':ui.card">
+        <span class="block text-base font-extrabold" :class="st!=='ok'&&'text-emerald-500'" x-text="countByState('ok')"></span>
+        <span class="block text-[11px] opacity-80">มีของอยู่</span>
+      </button>
+      <button type="button" @click="st='low'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='low'?'bg-amber-400 border-amber-400 text-slate-900 shadow-xs':ui.card">
+        <span class="block text-base font-extrabold" :class="st!=='low'&&'text-amber-500'" x-text="countByState('low')"></span>
+        <span class="block text-[11px] opacity-80">ใกล้หมด</span>
+      </button>
+      <button type="button" @click="st='out'" class="rounded-2xl border p-2.5 text-center transition" :class="st==='out'?'bg-rose-500 border-rose-500 text-white shadow-xs':ui.card">
+        <span class="block text-base font-extrabold" :class="st!=='out'&&'text-rose-500'" x-text="countByState('out')"></span>
+        <span class="block text-[11px] opacity-80">หมดแล้ว</span>
+      </button>
     </div>
 
-    <p x-show="!filtered.length" class="text-center opacity-60 py-14 text-sm">ยังไม่มีสินค้าในหมวดนี้ กดปุ่ม ＋ ด้านล่างเพื่อเพิ่มได้เลย</p>
+    <!-- ค้นหา -->
+    <div class="relative">
+      <input x-model="q" type="search" placeholder="🔍 ค้นหาชื่อของใช้ หรือเลขบาร์โค้ด..." class="w-full rounded-2xl border pl-4 pr-9 py-3 text-sm outline-none" :class="ui.input">
+      <button type="button" x-show="q" @click="q=''" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 text-sm px-1.5">✕</button>
+    </div>
 
-    <template x-for="c in cats" :key="c.k">
+    <!-- แถบหมวดหมู่ + ปุ่มเพิ่มหมวดเอง -->
+    <div class="flex gap-2 overflow-x-auto pb-1 items-center">
+      <button type="button" @click="cat='all'" class="shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border" :class="cat==='all'?ui.chipActive:ui.chip">✨ ทั้งหมด</button>
+      <template x-for="c in allCats" :key="c.k">
+        <button type="button" @click="cat=c.k" class="shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border" :class="cat===c.k?ui.chipActive:ui.chip" x-text="c.e+' '+c.n"></button>
+      </template>
+      <button type="button" @click="openCatModal()" class="shrink-0 px-3 py-2 rounded-full text-xs font-bold border border-dashed" :class="ui.softBtn">＋ หมวด</button>
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="!filtered.length" class="rounded-3xl border p-10 text-center space-y-2" :class="ui.card">
+      <p class="text-4xl">🧺</p>
+      <p class="font-bold text-sm">ไม่พบรายการในหน้านี้</p>
+      <p class="text-xs opacity-60">กดปุ่ม ＋ มุมขวาล่างเพื่อเพิ่มของใช้ชิ้นใหม่ได้เลย</p>
+    </div>
+
+    <!-- รายการแยกตามหมวดหมู่ -->
+    <template x-for="c in allCats" :key="c.k">
       <div x-show="byCat(c.k).length" class="space-y-2">
-        <div class="flex items-center justify-between pt-1">
-          <h2 class="font-bold text-sm opacity-80" x-text="c.e+' '+c.n"></h2>
-          <span class="text-xs opacity-55" x-text="byCat(c.k).length+' รายการ'"></span>
+        <div class="flex items-center justify-between pt-1 px-0.5">
+          <h2 class="font-bold text-sm flex items-center gap-1.5">
+            <span x-text="c.e"></span>
+            <span x-text="c.n"></span>
+          </h2>
+          <span class="text-[11px] opacity-55" x-text="byCat(c.k).length+' ชิ้น'"></span>
         </div>
+
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <template x-for="i in byCat(c.k)" :key="i.id">
-            <div class="rounded-2xl border p-3 border-l-4 flex flex-col justify-between gap-2.5 shadow-xs transition" :class="[ui.card, stOf(i).bd]">
-              <!-- ส่วนบน: รูป + ชื่อ + เวลาแกะใช้ -->
-              <div class="flex gap-2.5 items-start cursor-pointer" @click="edit(i)">
-                <div class="w-13 h-13 w-14 h-14 shrink-0 rounded-xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+            <div class="rounded-3xl border p-3 flex flex-col justify-between gap-2.5 shadow-xs relative overflow-hidden" :class="ui.card">
+              <!-- แถบสีสถานะด้านบนการ์ด -->
+              <div class="absolute top-0 inset-x-0 h-1" :class="stateMeta(i).bar"></div>
+
+              <!-- รูป + ชื่อ + ป้ายสถานะอัตโนมัติ -->
+              <div class="flex gap-2.5 items-start cursor-pointer pt-0.5" @click="edit(i)">
+                <div class="w-13 h-13 w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
                   <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
                   <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
                 </div>
                 <div class="min-w-0 flex-1">
-                  <p class="font-semibold text-sm leading-snug break-words line-clamp-2" x-text="i.name"></p>
-                  <p class="text-[11px] opacity-60 mt-0.5" x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่แกะ'"></p>
-                  <p x-show="i.price>0" class="text-[11px] opacity-65 mt-0.5">฿<span x-text="fmt(i.price)"></span></p>
+                  <p class="font-bold text-sm leading-snug break-words line-clamp-2" x-text="i.name"></p>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold" :class="stateMeta(i).badge" x-text="stateMeta(i).label"></span>
                 </div>
               </div>
 
-              <!-- ไฟจราจร 3 ระดับ -->
-              <div class="grid grid-cols-3 gap-1">
-                <template x-for="s in sts" :key="s.k">
-                  <button type="button" @click="save(i.id,{status:s.k})" class="h-8 rounded-lg text-[11px] font-semibold transition" :class="(i.status||'high')===s.k?(s.bg+' text-white ring-2 ring-offset-1 '+ui.ring):(s.bg+' text-white/80 opacity-25 hover:opacity-50')" x-text="s.n"></button>
-                </template>
+              <!-- ข้อมูลเสริม: แกะล่าสุด / ราคา -->
+              <div class="flex items-center justify-between text-[11px] opacity-65 px-0.5">
+                <span x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></span>
+                <span x-show="i.price>0">฿<span x-text="fmt(i.price)"></span></span>
               </div>
 
-              <!-- จำนวนคงเหลือ +/- -->
-              <div class="flex items-center justify-between gap-1">
-                <button type="button" @click="dec(i)" class="w-10 h-10 rounded-xl text-lg font-bold flex items-center justify-center border" :class="ui.stepBtn">−</button>
+              <!-- ปุ่มปรับจำนวนคงเหลือ - / + -->
+              <div class="flex items-center justify-between gap-1 rounded-2xl p-1 border" :class="ui.softBtn">
+                <button type="button" @click="dec(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
                 <div class="text-center leading-none">
-                  <span class="text-lg font-bold" x-text="i.qty||0"></span>
-                  <span x-show="i.min>0" class="block text-[10px] opacity-55 mt-0.5">ขั้นต่ำ <span x-text="i.min"></span></span>
+                  <span class="text-lg font-extrabold" x-text="Number(i.qty)||0"></span>
+                  <span x-show="Number(i.min)>0" class="block text-[10px] opacity-60 mt-0.5">เตือน ≤ <span x-text="i.min"></span></span>
                 </div>
-                <button type="button" @click="save(i.id,{qty:(i.qty||0)+1})" class="w-10 h-10 rounded-xl text-lg font-bold flex items-center justify-center border" :class="ui.stepBtn">＋</button>
+                <button type="button" @click="inc(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
               </div>
 
-              <!-- ปุ่มเข้าลิสต์ซื้อ -->
-              <button type="button" @click="save(i.id,{onList:!i.onList,buy:i.buy||1})" class="w-full py-2 rounded-xl text-xs font-semibold border transition" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 อยู่ในลิสต์ ('+(i.buy||1)+')':'＋ เพิ่มลิสต์ซื้อ'"></button>
+              <!-- ปุ่มสลับเข้า/ออกจากลิสต์ซื้อ -->
+              <button type="button" @click="save(i.id,{onList:!onList(i),buy:i.buy||1})" class="w-full py-2 rounded-2xl text-xs font-bold border" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 อยู่ในลิสต์ ('+(i.buy||1)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
             </div>
           </template>
         </div>
@@ -133,41 +176,60 @@ button:active{transform:scale(.96)}
 
   <!-- SHOPPING -->
   <section x-show="tab==='shop'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <div class="rounded-2xl p-4 shadow-sm space-y-2" :class="ui.primary">
-      <div class="grid grid-cols-2 gap-3 text-center">
-        <div class="rounded-xl bg-black/10 p-2.5">
+    <!-- การ์ดสรุปงบ + แถบ Progress -->
+    <div class="rounded-3xl p-4 shadow-sm space-y-3" :class="ui.primary">
+      <div class="grid grid-cols-2 gap-2.5 text-center">
+        <div class="rounded-2xl bg-black/10 p-2.5">
           <p class="text-xs opacity-90">งบรวมทั้งลิสต์</p>
-          <p class="text-2xl font-bold mt-0.5">฿<span x-text="fmt(total)"></span></p>
+          <p class="text-2xl font-extrabold mt-0.5">฿<span x-text="fmt(total)"></span></p>
         </div>
-        <div class="rounded-xl bg-black/10 p-2.5">
-          <p class="text-xs opacity-90">เฉพาะที่ติ๊กแล้ว (<span x-text="shopList.filter(x=>x.inCart).length"></span>/<span x-text="shopList.length"></span>)</p>
-          <p class="text-2xl font-bold mt-0.5">฿<span x-text="fmt(totalChecked)"></span></p>
+        <div class="rounded-2xl bg-black/10 p-2.5">
+          <p class="text-xs opacity-90">หยิบใส่ตะกร้าแล้ว</p>
+          <p class="text-2xl font-extrabold mt-0.5">฿<span x-text="fmt(totalChecked)"></span></p>
         </div>
       </div>
-      <div x-show="shopList.length" class="flex justify-end gap-2 pt-1">
-        <button type="button" @click="toggleAllCart(true)" class="text-xs px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25">ติ๊กทั้งหมด</button>
-        <button type="button" @click="toggleAllCart(false)" class="text-xs px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25">ล้างติ๊ก</button>
+
+      <div x-show="shopList.length" class="space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <span>ความคืบหน้า (<span x-text="checkedCount"></span>/<span x-text="shopList.length"></span> ชิ้น)</span>
+          <div class="flex gap-1.5">
+            <button type="button" @click="toggleAllCart(true)" class="px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25 font-medium">ติ๊กครบ</button>
+            <button type="button" @click="toggleAllCart(false)" class="px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25 font-medium">ล้างติ๊ก</button>
+          </div>
+        </div>
+        <div class="w-full h-2 rounded-full bg-black/15 overflow-hidden">
+          <div class="h-full bg-white rounded-full transition-all duration-300" :style="'width:'+(shopList.length?(checkedCount/shopList.length*100):0)+'%'"></div>
+        </div>
       </div>
     </div>
 
-    <p x-show="!shopList.length" class="text-center opacity-60 py-14 text-sm">ไม่มีของที่ต้องซื้อในตอนนี้ 🎉</p>
+    <div x-show="!shopList.length" class="rounded-3xl border p-12 text-center space-y-2" :class="ui.card">
+      <p class="text-4xl">🎉</p>
+      <p class="font-bold text-sm">ของใช้ในบ้านยังครบดีอยู่!</p>
+      <p class="text-xs opacity-60">เมื่อของชิ้นไหนลดถึงจุดขั้นต่ำหรือหมด ระบบจะดึงมาที่นี่ให้อัตโนมัติ</p>
+    </div>
 
     <div class="space-y-2">
       <template x-for="i in shopList" :key="i.id">
-        <div class="rounded-2xl border p-3 flex items-center gap-3 shadow-xs transition" :class="[ui.card, i.inCart&&'opacity-60']">
-          <input type="checkbox" :checked="!!i.inCart" @change="save(i.id,{inCart:$event.target.checked})" class="w-6 h-6 rounded shrink-0 cursor-pointer" :class="ui.accentCheck">
-          <div class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl overflow-hidden border" :class="ui.thumb">
+        <div class="rounded-3xl border p-3 flex items-center gap-3 shadow-xs transition" :class="[ui.card, i.inCart&&'opacity-60']">
+          <input type="checkbox" :checked="!!i.inCart" @change="save(i.id,{inCart:$event.target.checked})" class="w-6 h-6 rounded-lg shrink-0 cursor-pointer" :class="ui.accentCheck">
+          <div class="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-xl overflow-hidden border" :class="ui.thumb">
             <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" alt=""></template>
             <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-sm leading-snug break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
-            <p class="text-xs opacity-65 mt-0.5">คงเหลือ <span x-text="i.qty||0"></span> · ฿<span x-text="fmt(i.price||0)"></span>/ชิ้น</p>
-            <p class="text-xs font-semibold mt-0.5" :class="ui.accentText">รวม ฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
+            <div class="flex items-center gap-1.5">
+              <p class="font-bold text-sm leading-snug break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
+            </div>
+            <p class="text-[11px] opacity-65 mt-0.5">
+              <span class="font-semibold" :class="Number(i.qty)<=0?'text-rose-500':'text-amber-500'" x-text="Number(i.qty)<=0?'หมดแล้ว':'เหลือ '+i.qty"></span>
+              · ฿<span x-text="fmt(i.price||0)"></span>/ชิ้น
+            </p>
+            <p class="text-xs font-bold mt-0.5" :class="ui.accentText">รวม ฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <button type="button" @click="save(i.id,{buy:Math.max(1,(i.buy||1)-1)})" class="w-9 h-9 rounded-xl border font-bold" :class="ui.stepBtn">−</button>
-            <span class="w-6 text-center font-bold text-sm" x-text="i.buy||1"></span>
+            <span class="w-6 text-center font-extrabold text-sm" x-text="i.buy||1"></span>
             <button type="button" @click="save(i.id,{buy:(i.buy||1)+1})" class="w-9 h-9 rounded-xl border font-bold" :class="ui.stepBtn">＋</button>
           </div>
         </div>
@@ -175,26 +237,26 @@ button:active{transform:scale(.96)}
     </div>
 
     <select @change="if($event.target.value){save($event.target.value,{onList:true,buy:1});$event.target.value=''}" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
-      <option value="">＋ เพิ่มรายการจากสต็อกเข้าลิสต์ช้อปปิ้ง…</option>
+      <option value="">＋ เลือกของจากสต็อกมาใส่ลิสต์เพิ่มเอง…</option>
       <template x-for="i in list.filter(x=>!onList(x))" :key="i.id">
-        <option :value="i.id" x-text="i.name"></option>
+        <option :value="i.id" x-text="catOf(i.cat).e+' '+i.name"></option>
       </template>
     </select>
 
-    <button type="button" @click="restock()" :disabled="!shopList.some(i=>i.inCart)" class="w-full py-4 rounded-2xl disabled:opacity-40 font-bold text-base shadow-sm" :class="ui.primary">✅ ยืนยันการซื้อและเติมสต็อก (Restock)</button>
+    <button type="button" @click="restock()" :disabled="!shopList.some(i=>i.inCart)" class="w-full py-4 rounded-2xl disabled:opacity-40 font-extrabold text-base shadow-sm" :class="ui.primary">🛍️ ยืนยันการซื้อ & เติมเข้าสต็อก</button>
   </section>
 
-  <!-- SETTINGS -->
+  <!-- SETTINGS (แยกตั้งค่าทั่วไป กับ ตั้งค่าระบบหลังบ้าน) -->
   <section x-show="tab==='set'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <!-- เลือกธีม -->
-    <div class="rounded-2xl border p-4 space-y-3 shadow-xs" :class="ui.card">
+    <!-- 1. ธีมสี -->
+    <div class="rounded-3xl border p-4 space-y-3 shadow-xs" :class="ui.card">
       <div>
-        <p class="font-bold">ธีมสีแอป (Theme)</p>
-        <p class="text-xs opacity-65">เลือกโทนสีที่ชอบหรือเหมาะกับแสงรอบตัว</p>
+        <p class="font-bold text-base">🎨 ธีมสีของแอป</p>
+        <p class="text-xs opacity-65">เปลี่ยนบรรยากาศแอปได้ตามชอบ</p>
       </div>
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <template x-for="t in themes" :key="t.k">
-          <button type="button" @click="setTheme(t.k)" class="flex items-center gap-2.5 p-3 rounded-xl border text-left font-medium text-sm transition" :class="theme===t.k?ui.chipActive:ui.chip">
+          <button type="button" @click="setTheme(t.k)" class="flex items-center gap-2.5 p-3 rounded-2xl border text-left font-semibold text-xs" :class="theme===t.k?ui.chipActive:ui.chip">
             <span class="w-5 h-5 rounded-full shrink-0 border border-black/15" :class="t.dot"></span>
             <span x-text="t.n"></span>
           </button>
@@ -202,105 +264,177 @@ button:active{transform:scale(.96)}
       </div>
     </div>
 
-    <!-- รหัสบ้าน -->
-    <div class="rounded-2xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
-      <p class="font-bold">รหัสบ้าน (ใช้ร่วมกัน 2–3 คน)</p>
-      <input x-model="setup.code" class="w-full rounded-xl border p-3 outline-none" :class="ui.input">
+    <!-- 2. จัดการหมวดหมู่ของใช้ -->
+    <div class="rounded-3xl border p-4 space-y-3 shadow-xs" :class="ui.card">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-bold text-base">🗂️ หมวดหมู่ของใช้</p>
+          <p class="text-xs opacity-65">เพิ่ม ลบ หรือเปลี่ยนอีโมจิหมวดได้เอง</p>
+        </div>
+        <button type="button" @click="openCatModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold" :class="ui.primary">＋ เพิ่มหมวด</button>
+      </div>
+      <div class="space-y-1.5">
+        <template x-for="c in allCats" :key="c.k">
+          <div class="flex items-center justify-between p-2.5 rounded-2xl border" :class="ui.softBtn">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl w-8 h-8 rounded-xl flex items-center justify-center border" :class="ui.card" x-text="c.e"></span>
+              <span class="font-semibold text-sm" x-text="c.n"></span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" @click="openCatModal(c)" class="px-2.5 py-1.5 rounded-xl text-xs border" :class="ui.card">แก้ไข</button>
+              <button type="button" x-show="c.k!=='other'" @click="delCat(c)" class="px-2.5 py-1.5 rounded-xl text-xs border border-red-300 text-red-500">ลบ</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 3. รหัสบ้านสำหรับแชร์ให้คนในบ้าน -->
+    <div class="rounded-3xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
+      <div>
+        <p class="font-bold text-base">🏠 รหัสบ้าน (แชร์ซิงก์ข้อมูล)</p>
+        <p class="text-xs opacity-65">ส่งรหัสนี้ให้คนในบ้านกรอกเพื่อใช้สต็อกร่วมกัน</p>
+      </div>
+      <input x-model="setup.code" class="w-full rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
       <div class="flex gap-2">
-        <button type="button" @click="navigator.clipboard.writeText(code).then(()=>flash('คัดลอกรหัสบ้านแล้ว'))" class="flex-1 py-3 rounded-xl border font-medium text-sm" :class="ui.softBtn">📋 คัดลอกรหัส</button>
-        <button type="button" @click="saveSetup()" class="flex-1 py-3 rounded-xl font-semibold text-sm" :class="ui.primary">บันทึก/เปลี่ยนรหัส</button>
+        <button type="button" @click="navigator.clipboard.writeText(code).then(()=>flash('คัดลอกรหัสบ้านแล้ว 📋'))" class="flex-1 py-3 rounded-2xl border font-semibold text-xs" :class="ui.softBtn">📋 คัดลอกรหัส</button>
+        <button type="button" @click="saveSetup()" class="flex-1 py-3 rounded-2xl font-bold text-xs" :class="ui.primary">บันทึกรหัสบ้าน</button>
       </div>
     </div>
 
-    <!-- Firebase Config -->
-    <div class="rounded-2xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
-      <p class="font-bold">Firebase Config</p>
-      <textarea x-model="setup.cfg" rows="6" class="w-full rounded-xl border p-3 font-mono text-xs outline-none" :class="ui.input"></textarea>
-      <p class="text-red-500 text-sm" x-text="setup.err"></p>
-      <button type="button" @click="saveSetup()" class="w-full py-3 rounded-xl font-semibold text-sm" :class="ui.primary">บันทึก Config</button>
-    </div>
+    <!-- 4. ตั้งค่าระบบหลังบ้าน (ซ่อนไว้ลึกๆ กดเปิดเฉพาะตอนจำเป็น) -->
+    <div class="pt-4">
+      <button type="button" @click="showAdv=!showAdv" class="w-full py-3 rounded-2xl border text-xs font-semibold opacity-70 flex items-center justify-center gap-1.5" :class="ui.softBtn">
+        <span>🛠️ ตั้งค่าระบบหลังบ้าน & สำรองข้อมูล</span>
+        <span x-text="showAdv?'▲':'▼'"></span>
+      </button>
 
-    <!-- สำรองข้อมูล -->
-    <div class="rounded-2xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
-      <p class="font-bold">สำรองข้อมูล (.json)</p>
-      <div class="grid grid-cols-2 gap-2">
-        <button type="button" @click="exportJson()" class="py-3 rounded-xl border font-medium text-sm" :class="ui.softBtn">⬇️ Export JSON</button>
-        <label class="py-3 rounded-xl border font-medium text-sm text-center cursor-pointer" :class="ui.softBtn">⬆️ Import JSON
-          <input type="file" accept=".json,application/json" class="hidden" @change="importJson($event)">
-        </label>
+      <div x-show="showAdv" x-transition class="mt-3 space-y-3">
+        <div class="rounded-3xl border p-4 space-y-2.5" :class="ui.card">
+          <p class="font-bold text-sm">🔥 Firebase Config (ฐานข้อมูลคลาวด์)</p>
+          <textarea x-model="setup.cfg" rows="6" class="w-full rounded-2xl border p-3 font-mono text-[11px] outline-none" :class="ui.input"></textarea>
+          <p x-show="setup.err" class="text-red-500 text-xs" x-text="setup.err"></p>
+          <button type="button" @click="saveSetup()" class="w-full py-3 rounded-2xl font-bold text-xs" :class="ui.primary">อัปเดต Firebase Config</button>
+        </div>
+
+        <div class="rounded-3xl border p-4 space-y-2.5" :class="ui.card">
+          <p class="font-bold text-sm">💾 สำรอง / กู้คืนข้อมูล (.json)</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" @click="exportJson()" class="py-3 rounded-2xl border font-semibold text-xs" :class="ui.softBtn">⬇️ Export ไฟล์สำรอง</button>
+            <label class="py-3 rounded-2xl border font-semibold text-xs text-center cursor-pointer" :class="ui.softBtn">⬆️ Import ไฟล์สำรอง
+              <input type="file" accept=".json,application/json" class="hidden" @change="importJson($event)">
+            </label>
+          </div>
+          <p class="text-[11px] opacity-60">Import จะเขียนทับข้อมูลสินค้าทั้งหมดในรหัสบ้านนี้</p>
+        </div>
       </div>
-      <p class="text-xs opacity-60">Import จะเขียนทับรายการสินค้าทั้งหมดในรหัสบ้านนี้</p>
     </div>
   </section>
 
   <!-- ปุ่มลอย -->
   <div x-show="tab==='inv'" class="fixed right-4 bottom-24 z-20 flex flex-col gap-3" style="margin-bottom:env(safe-area-inset-bottom)">
     <button type="button" @click="openScan()" class="w-14 h-14 rounded-full text-2xl shadow-lg flex items-center justify-center border" :class="ui.fabSec" title="สแกนบาร์โค้ด">📷</button>
-    <button type="button" @click="add()" class="w-14 h-14 rounded-full text-3xl shadow-lg flex items-center justify-center font-bold" :class="ui.primary" title="เพิ่มสินค้า">＋</button>
+    <button type="button" @click="add()" class="w-14 h-14 rounded-full text-3xl shadow-lg flex items-center justify-center font-bold" :class="ui.primary" title="เพิ่มของใช้">＋</button>
   </div>
 
   <!-- แท็บบาร์ -->
   <nav class="fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-3 pb-safe" :class="ui.nav">
-    <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-medium flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-65'"><span class="text-lg">📦</span><span>สต็อก</span></button>
-    <button type="button" @click="tab='shop'" class="py-2.5 text-xs font-medium flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-65'"><span class="text-lg">🛒</span><span>ต้องซื้อ</span>
-      <span x-show="shopList.length" class="absolute top-1.5 right-[26%] min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
-    <button type="button" @click="tab='set'" class="py-2.5 text-xs font-medium flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-65'"><span class="text-lg">⚙️</span><span>ตั้งค่า</span></button>
+    <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-lg">🏠</span><span>คลังของใช้</span></button>
+    <button type="button" @click="tab='shop'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-60'"><span class="text-lg">🛒</span><span>ต้องซื้อ</span>
+      <span x-show="shopList.length" class="absolute top-1.5 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
+    <button type="button" @click="tab='set'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-60'"><span class="text-lg">⚙️</span><span>ตั้งค่า</span></button>
   </nav>
 
-  <!-- ฟอร์มสินค้า -->
+  <!-- Modal เพิ่ม/แก้ไขสินค้า -->
   <div x-show="!!f" class="fixed inset-0 z-40 bg-black/60 flex items-end justify-center" @click.self="f=null">
     <div x-if="!!f" class="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-t-3xl border-t p-4 space-y-3 pb-safe" :class="ui.modal">
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-lg" x-text="f && f.id ? 'แก้ไขสินค้า' : 'เพิ่มสินค้าใหม่'"></h3>
+          <h3 class="font-extrabold text-lg" x-text="f && f.id ? '✏️ แก้ไขรายการ' : '✨ เพิ่มของใช้ใหม่'"></h3>
           <button type="button" @click="f=null" class="w-8 h-8 rounded-full flex items-center justify-center opacity-70">✕</button>
         </div>
-        <input x-model="f.name" placeholder="ชื่อสินค้า เช่น โฟมล้างหน้า *" class="w-full rounded-xl border p-3 outline-none" :class="ui.input">
-        <select x-model="f.cat" class="w-full rounded-xl border p-3 outline-none" :class="ui.input">
-          <template x-for="c in cats" :key="c.k">
-            <option :value="c.k" x-text="c.e+' '+c.n"></option>
-          </template>
-        </select>
+
+        <input x-model="f.name" placeholder="ชื่อสินค้า เช่น สบู่เหลว, โฟมล้างหน้า *" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+
         <div class="flex gap-2">
-          <input x-model="f.barcode" placeholder="บาร์โค้ด (สแกนหรือพิมพ์)" inputmode="numeric" class="flex-1 min-w-0 rounded-xl border p-3 outline-none" :class="ui.input">
-          <button type="button" @click="openScan(true)" class="px-4 rounded-xl border text-lg" :class="ui.softBtn">📷</button>
+          <select x-model="f.cat" class="flex-1 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+            <template x-for="c in allCats" :key="c.k">
+              <option :value="c.k" x-text="c.e+' '+c.n"></option>
+            </template>
+          </select>
+          <button type="button" @click="openCatModal()" class="px-3.5 rounded-2xl border text-xs font-bold shrink-0" :class="ui.softBtn">＋ หมวด</button>
         </div>
+
+        <div class="flex gap-2">
+          <input x-model="f.barcode" placeholder="เลขบาร์โค้ด (สแกนหรือพิมพ์)" inputmode="numeric" class="flex-1 min-w-0 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+          <button type="button" @click="openScan(true)" class="px-4 rounded-2xl border text-lg" :class="ui.softBtn">📷</button>
+        </div>
+
         <div class="flex gap-3 items-center">
-          <div class="w-16 h-16 shrink-0 rounded-xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+          <div class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
             <template x-if="f && f.img"><img :src="f.img" class="w-full h-full object-cover" alt=""></template>
             <template x-if="f && !f.img"><span x-text="catOf(f.cat).e"></span></template>
           </div>
           <div class="flex-1 space-y-2 min-w-0">
-            <input x-model="f.imgUrl" @change="urlImg()" placeholder="วางลิงก์รูปภาพ (URL)" class="w-full rounded-xl border p-2.5 text-sm outline-none" :class="ui.input">
+            <input x-model="f.imgUrl" @change="urlImg()" placeholder="วางลิงก์รูปภาพ (URL)" class="w-full rounded-xl border p-2.5 text-xs outline-none" :class="ui.input">
             <div class="flex gap-2">
-              <label class="flex-1 text-center py-2 rounded-xl border text-xs font-medium cursor-pointer" :class="ui.softBtn">📸 ถ่าย/เลือกรูป
+              <label class="flex-1 text-center py-2 rounded-xl border text-xs font-semibold cursor-pointer" :class="ui.softBtn">📸 ถ่าย/เลือกรูป
                 <input type="file" accept="image/*" class="hidden" @change="pickImg($event)">
               </label>
               <button type="button" x-show="f && f.img" @click="f.img='';f.imgUrl=''" class="px-3 rounded-xl border text-xs" :class="ui.softBtn">ลบรูป</button>
             </div>
           </div>
         </div>
+
         <div class="grid grid-cols-3 gap-2 text-xs">
-          <label class="font-medium">คงเหลือ
-            <input x-model.number="f.qty" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-xl border p-3 text-base outline-none" :class="ui.input">
+          <label class="font-semibold">คงเหลือตอนนี้
+            <input x-model.number="f.qty" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
           </label>
-          <label class="font-medium">จุดสั่งซื้อขั้นต่ำ
-            <input x-model.number="f.min" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-xl border p-3 text-base outline-none" :class="ui.input">
+          <label class="font-semibold">เตือนเมื่อเหลือ ≤
+            <input x-model.number="f.min" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
           </label>
-          <label class="font-medium">ราคา/ชิ้น (฿)
-            <input x-model.number="f.price" type="number" min="0" inputmode="decimal" class="mt-1 w-full rounded-xl border p-3 text-base outline-none" :class="ui.input">
+          <label class="font-semibold">ราคา/ชิ้น (฿)
+            <input x-model.number="f.price" type="number" min="0" inputmode="decimal" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
           </label>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <template x-for="s in sts" :key="s.k">
-            <button type="button" @click="f.status=s.k" class="py-3 rounded-xl text-xs font-bold text-white transition" :class="s.bg+(f.status===s.k?' ring-2 ring-offset-2 '+ui.ring:' opacity-35')" x-text="s.n"></button>
+
+        <!-- พรีวิวสถานะอัตโนมัติ -->
+        <div class="rounded-2xl p-2.5 border flex items-center justify-between text-xs" :class="ui.softBtn">
+          <span>สถานะอัตโนมัติ:</span>
+          <span class="px-2.5 py-1 rounded-full font-bold" :class="stateMeta(f).badge" x-text="stateMeta(f).label"></span>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button type="button" x-show="f && f.id" @click="del()" class="px-4 py-3.5 rounded-2xl border border-rose-400 text-rose-500 font-bold">🗑</button>
+          <button type="button" @click="f=null" class="flex-1 py-3.5 rounded-2xl border font-semibold" :class="ui.softBtn">ยกเลิก</button>
+          <button type="button" @click="commit()" class="flex-[2] py-3.5 rounded-2xl font-extrabold shadow-sm" :class="ui.primary">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal เพิ่ม/แก้ไขหมวดหมู่ + เลือกอีโมจิ -->
+  <div x-show="!!catForm" class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="catForm=null">
+    <div x-if="!!catForm" class="w-full max-w-xl rounded-t-3xl border-t p-4 space-y-3 pb-safe" :class="ui.modal">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold text-base" x-text="catForm.isEdit?'✏️ แก้ไขหมวดหมู่':'✨ เพิ่มหมวดหมู่ใหม่'"></h3>
+        <button type="button" @click="catForm=null" class="w-8 h-8 rounded-full flex items-center justify-center opacity-70">✕</button>
+      </div>
+      <div class="flex gap-2">
+        <input x-model="catForm.e" maxlength="4" placeholder="อีโมจิ" class="w-16 text-center text-2xl rounded-2xl border p-2.5 outline-none" :class="ui.input">
+        <input x-model="catForm.n" placeholder="ชื่อหมวด เช่น ของใช้สัตว์เลี้ยง, ยาสามัญ" class="flex-1 rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
+      </div>
+      <div>
+        <p class="text-[11px] opacity-65 mb-1.5">แตะเลือกอีโมจิด่วน:</p>
+        <div class="grid grid-cols-8 gap-1.5">
+          <template x-for="em in emojiChoices" :key="em">
+            <button type="button" @click="catForm.e=em" class="h-10 rounded-xl border text-xl flex items-center justify-center" :class="catForm.e===em?ui.chipActive:ui.softBtn" x-text="em"></button>
           </template>
         </div>
-        <div class="flex gap-2 pt-1">
-          <button type="button" x-show="f && f.id" @click="del()" class="px-4 py-3.5 rounded-xl border border-red-400 text-red-500 font-semibold">🗑</button>
-          <button type="button" @click="f=null" class="flex-1 py-3.5 rounded-xl border font-semibold" :class="ui.softBtn">ยกเลิก</button>
-          <button type="button" @click="commit()" class="flex-[2] py-3.5 rounded-xl font-bold shadow-sm" :class="ui.primary">บันทึก</button>
-        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" @click="catForm=null" class="flex-1 py-3 rounded-2xl border font-semibold text-sm" :class="ui.softBtn">ยกเลิก</button>
+        <button type="button" @click="saveCat()" class="flex-[2] py-3 rounded-2xl font-extrabold text-sm" :class="ui.primary">บันทึกหมวดหมู่</button>
       </div>
     </div>
   </div>
@@ -316,28 +450,36 @@ button:active{transform:scale(.96)}
   <div x-show="hit" class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="hit=null">
     <template x-if="hit&&items[hit]">
       <div class="w-full max-w-xl rounded-t-3xl border-t p-5 space-y-4 pb-safe" :class="ui.modal">
-        <div>
-          <p class="text-xs opacity-60">พบสินค้าในสต็อก</p>
-          <p class="text-xl font-bold" x-text="items[hit].name"></p>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-xs opacity-60">พบสินค้าในคลัง</p>
+            <p class="text-xl font-extrabold" x-text="items[hit].name"></p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold" :class="stateMeta(items[hit]).badge" x-text="stateMeta(items[hit]).label"></span>
         </div>
-        <div class="grid grid-cols-3 gap-2">
-          <template x-for="s in sts" :key="s.k">
-            <button type="button" @click="save(hit,{status:s.k})" class="py-3.5 rounded-xl text-xs font-bold text-white" :class="s.bg+((items[hit].status||'high')===s.k?' ring-2 ring-offset-2 '+ui.ring:' opacity-35')" x-text="s.n"></button>
-          </template>
+        <div class="flex items-center justify-center gap-6 py-2">
+          <button type="button" @click="dec({id:hit,...items[hit]})" class="w-16 h-16 rounded-2xl border text-3xl font-extrabold" :class="ui.stepBtn">−</button>
+          <div class="text-center">
+            <span class="text-4xl font-extrabold" x-text="Number(items[hit].qty)||0"></span>
+            <span x-show="Number(items[hit].min)>0" class="block text-xs opacity-60 mt-1">ขั้นต่ำ <span x-text="items[hit].min"></span></span>
+          </div>
+          <button type="button" @click="inc({id:hit,...items[hit]})" class="w-16 h-16 rounded-2xl border text-3xl font-extrabold" :class="ui.stepBtn">＋</button>
         </div>
-        <div class="flex items-center justify-center gap-6 py-1">
-          <button type="button" @click="dec({id:hit,...items[hit]})" class="w-16 h-16 rounded-2xl border text-3xl font-bold" :class="ui.stepBtn">−</button>
-          <span class="text-4xl font-bold" x-text="items[hit].qty||0"></span>
-          <button type="button" @click="save(hit,{qty:(items[hit].qty||0)+1})" class="w-16 h-16 rounded-2xl border text-3xl font-bold" :class="ui.stepBtn">＋</button>
-        </div>
-        <button type="button" @click="hit=null" class="w-full py-4 rounded-2xl font-bold" :class="ui.primary">เสร็จสิ้น</button>
+        <button type="button" @click="hit=null" class="w-full py-4 rounded-2xl font-extrabold" :class="ui.primary">เสร็จสิ้น ✨</button>
       </div>
+    </template>
+  </div>
+
+  <!-- เอฟเฟกต์ลูกเล่นตอนเติมสต็อก -->
+  <div class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+    <template x-for="sp in sparkles" :key="sp.id">
+      <span class="sparkle absolute text-3xl" :style="'left:'+sp.x+'%;top:'+sp.y+'%'" x-text="sp.e"></span>
     </template>
   </div>
 
   <!-- Toast -->
   <div x-show="toast" x-transition class="fixed top-16 inset-x-0 z-50 flex justify-center pointer-events-none px-4">
-    <span class="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-medium shadow-md" x-text="toast"></span>
+    <span class="px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-semibold shadow-md" x-text="toast"></span>
   </div>
 </div>
 </template>
@@ -357,94 +499,69 @@ const DEFAULT_CFG = {
   appId: "1:267051208812:web:e3a13bd142f05707758849"
 };
 
+const DEFAULT_CATS = [
+  {k:'bath',n:'ห้องน้ำ',e:'🛁'},
+  {k:'clean',n:'ซักรีด/ทำความสะอาด',e:'🧺'},
+  {k:'skin',n:'สกินแคร์/ของใช้ส่วนตัว',e:'🧴'},
+  {k:'food',n:'ของกิน/ครัว',e:'🍳'},
+  {k:'other',n:'อื่นๆ',e:'📦'}
+];
+
 const THEMES = {
   pink: {
-    isDark: false,
-    metaColor: '#f472b6',
-    body: 'bg-pink-50 text-slate-800',
-    header: 'bg-pink-50/90 border-pink-200/80',
-    card: 'bg-white border-pink-100',
-    modal: 'bg-white border-pink-100 text-slate-800',
-    nav: 'bg-white/95 border-pink-200/80',
-    navActive: 'text-pink-500 font-bold',
-    primary: 'bg-pink-500 hover:bg-pink-600 text-white',
-    accentText: 'text-pink-600',
-    accentCheck: 'accent-pink-500',
-    pill: 'bg-pink-100 text-pink-700',
-    chip: 'bg-white border-pink-200/80 text-slate-700',
-    chipActive: 'bg-pink-500 border-pink-500 text-white',
-    input: 'bg-white border-pink-200 text-slate-800 focus:border-pink-400',
-    thumb: 'bg-pink-50 border-pink-100',
-    stepBtn: 'bg-pink-50/80 border-pink-200/70 text-slate-800',
-    softBtn: 'bg-pink-50/60 border-pink-200 text-slate-700',
-    fabSec: 'bg-white border-pink-200 text-slate-800',
-    ring: 'ring-pink-400'
+    isDark:false, metaColor:'#f472b6',
+    body:'bg-pink-50 text-slate-800', header:'bg-pink-50/90 border-pink-200/80',
+    card:'bg-white border-pink-100', modal:'bg-white border-pink-100 text-slate-800',
+    nav:'bg-white/95 border-pink-200/80', navActive:'text-pink-500 font-extrabold',
+    primary:'bg-pink-500 hover:bg-pink-600 text-white', accentText:'text-pink-600', accentCheck:'accent-pink-500',
+    pill:'bg-pink-100 text-pink-700', chip:'bg-white border-pink-200/80 text-slate-700',
+    chipActive:'bg-pink-500 border-pink-500 text-white', input:'bg-white border-pink-200 text-slate-800 focus:border-pink-400',
+    thumb:'bg-pink-50 border-pink-100', stepBtn:'bg-pink-50/80 border-pink-200/70 text-slate-800',
+    softBtn:'bg-pink-50/60 border-pink-200/80 text-slate-700', fabSec:'bg-white border-pink-200 text-slate-800'
   },
   blue: {
-    isDark: false,
-    metaColor: '#3b82f6',
-    body: 'bg-sky-50 text-slate-800',
-    header: 'bg-sky-50/90 border-sky-200/80',
-    card: 'bg-white border-sky-100',
-    modal: 'bg-white border-sky-100 text-slate-800',
-    nav: 'bg-white/95 border-sky-200/80',
-    navActive: 'text-blue-600 font-bold',
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    accentText: 'text-blue-600',
-    accentCheck: 'accent-blue-600',
-    pill: 'bg-sky-100 text-blue-700',
-    chip: 'bg-white border-sky-200/80 text-slate-700',
-    chipActive: 'bg-blue-600 border-blue-600 text-white',
-    input: 'bg-white border-sky-200 text-slate-800 focus:border-blue-400',
-    thumb: 'bg-sky-50 border-sky-100',
-    stepBtn: 'bg-sky-50/80 border-sky-200/70 text-slate-800',
-    softBtn: 'bg-sky-50/60 border-sky-200 text-slate-700',
-    fabSec: 'bg-white border-sky-200 text-slate-800',
-    ring: 'ring-blue-400'
+    isDark:false, metaColor:'#3b82f6',
+    body:'bg-sky-50 text-slate-800', header:'bg-sky-50/90 border-sky-200/80',
+    card:'bg-white border-sky-100', modal:'bg-white border-sky-100 text-slate-800',
+    nav:'bg-white/95 border-sky-200/80', navActive:'text-blue-600 font-extrabold',
+    primary:'bg-blue-600 hover:bg-blue-700 text-white', accentText:'text-blue-600', accentCheck:'accent-blue-600',
+    pill:'bg-sky-100 text-blue-700', chip:'bg-white border-sky-200/80 text-slate-700',
+    chipActive:'bg-blue-600 border-blue-600 text-white', input:'bg-white border-sky-200 text-slate-800 focus:border-blue-400',
+    thumb:'bg-sky-50 border-sky-100', stepBtn:'bg-sky-50/80 border-sky-200/70 text-slate-800',
+    softBtn:'bg-sky-50/60 border-sky-200/80 text-slate-700', fabSec:'bg-white border-sky-200 text-slate-800'
   },
   emerald: {
-    isDark: false,
-    metaColor: '#10b981',
-    body: 'bg-emerald-50/70 text-slate-800',
-    header: 'bg-emerald-50/90 border-emerald-200/80',
-    card: 'bg-white border-emerald-100',
-    modal: 'bg-white border-emerald-100 text-slate-800',
-    nav: 'bg-white/95 border-emerald-200/80',
-    navActive: 'text-emerald-600 font-bold',
-    primary: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-    accentText: 'text-emerald-600',
-    accentCheck: 'accent-emerald-600',
-    pill: 'bg-emerald-100 text-emerald-700',
-    chip: 'bg-white border-emerald-200/80 text-slate-700',
-    chipActive: 'bg-emerald-600 border-emerald-600 text-white',
-    input: 'bg-white border-emerald-200 text-slate-800 focus:border-emerald-400',
-    thumb: 'bg-emerald-50 border-emerald-100',
-    stepBtn: 'bg-emerald-50/80 border-emerald-200/70 text-slate-800',
-    softBtn: 'bg-emerald-50/60 border-emerald-200 text-slate-700',
-    fabSec: 'bg-white border-emerald-200 text-slate-800',
-    ring: 'ring-emerald-400'
+    isDark:false, metaColor:'#10b981',
+    body:'bg-emerald-50/70 text-slate-800', header:'bg-emerald-50/90 border-emerald-200/80',
+    card:'bg-white border-emerald-100', modal:'bg-white border-emerald-100 text-slate-800',
+    nav:'bg-white/95 border-emerald-200/80', navActive:'text-emerald-600 font-extrabold',
+    primary:'bg-emerald-600 hover:bg-emerald-700 text-white', accentText:'text-emerald-600', accentCheck:'accent-emerald-600',
+    pill:'bg-emerald-100 text-emerald-700', chip:'bg-white border-emerald-200/80 text-slate-700',
+    chipActive:'bg-emerald-600 border-emerald-600 text-white', input:'bg-white border-emerald-200 text-slate-800 focus:border-emerald-400',
+    thumb:'bg-emerald-50 border-emerald-100', stepBtn:'bg-emerald-50/80 border-emerald-200/70 text-slate-800',
+    softBtn:'bg-emerald-50/60 border-emerald-200/80 text-slate-700', fabSec:'bg-white border-emerald-200 text-slate-800'
+  },
+  violet: {
+    isDark:false, metaColor:'#8b5cf6',
+    body:'bg-violet-50 text-slate-800', header:'bg-violet-50/90 border-violet-200/80',
+    card:'bg-white border-violet-100', modal:'bg-white border-violet-100 text-slate-800',
+    nav:'bg-white/95 border-violet-200/80', navActive:'text-violet-600 font-extrabold',
+    primary:'bg-violet-600 hover:bg-violet-700 text-white', accentText:'text-violet-600', accentCheck:'accent-violet-600',
+    pill:'bg-violet-100 text-violet-700', chip:'bg-white border-violet-200/80 text-slate-700',
+    chipActive:'bg-violet-600 border-violet-600 text-white', input:'bg-white border-violet-200 text-slate-800 focus:border-violet-400',
+    thumb:'bg-violet-50 border-violet-100', stepBtn:'bg-violet-50/80 border-violet-200/70 text-slate-800',
+    softBtn:'bg-violet-50/60 border-violet-200/80 text-slate-700', fabSec:'bg-white border-violet-200 text-slate-800'
   },
   dark: {
-    isDark: true,
-    metaColor: '#09090b',
-    body: 'bg-zinc-950 text-zinc-100',
-    header: 'bg-zinc-950/90 border-zinc-800',
-    card: 'bg-zinc-900 border-zinc-800',
-    modal: 'bg-zinc-900 border-zinc-800 text-zinc-100',
-    nav: 'bg-zinc-950/95 border-zinc-800',
-    navActive: 'text-pink-400 font-bold',
-    primary: 'bg-pink-500 hover:bg-pink-600 text-white',
-    accentText: 'text-pink-400',
-    accentCheck: 'accent-pink-500',
-    pill: 'bg-zinc-800 text-zinc-200',
-    chip: 'bg-zinc-900 border-zinc-800 text-zinc-300',
-    chipActive: 'bg-zinc-100 border-zinc-100 text-zinc-950',
-    input: 'bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-pink-400',
-    thumb: 'bg-zinc-800 border-zinc-700',
-    stepBtn: 'bg-zinc-800 border-zinc-700 text-zinc-100',
-    softBtn: 'bg-zinc-800/80 border-zinc-700 text-zinc-200',
-    fabSec: 'bg-zinc-800 border-zinc-700 text-zinc-100',
-    ring: 'ring-zinc-400 ring-offset-zinc-900'
+    isDark:true, metaColor:'#09090b',
+    body:'bg-zinc-950 text-zinc-100', header:'bg-zinc-950/90 border-zinc-800',
+    card:'bg-zinc-900 border-zinc-800', modal:'bg-zinc-900 border-zinc-800 text-zinc-100',
+    nav:'bg-zinc-950/95 border-zinc-800', navActive:'text-pink-400 font-extrabold',
+    primary:'bg-pink-500 hover:bg-pink-600 text-white', accentText:'text-pink-400', accentCheck:'accent-pink-500',
+    pill:'bg-zinc-800 text-zinc-200', chip:'bg-zinc-900 border-zinc-800 text-zinc-300',
+    chipActive:'bg-zinc-100 border-zinc-100 text-zinc-950', input:'bg-zinc-900 border-zinc-700 text-zinc-100 focus:border-pink-400',
+    thumb:'bg-zinc-800 border-zinc-700', stepBtn:'bg-zinc-800 border-zinc-700 text-zinc-100',
+    softBtn:'bg-zinc-800/80 border-zinc-700 text-zinc-200', fabSec:'bg-zinc-800 border-zinc-700 text-zinc-100'
   }
 };
 
@@ -456,35 +573,27 @@ Alpine.data('app', () => ({
   theme: localStorage.getItem('stocky_theme') || 'pink',
   code: localStorage.getItem('roomCode') || '',
   cfg: L('fbcfg') || DEFAULT_CFG,
-  ready:false, online:false,
-  items:{}, q:'', cat:'all', st:'all',
-  f:null, scan:false, scanMsg:'', scanForForm:false, _handlingScan:false,
-  hit:null, toast:'', scanner:null,
+  ready:false, online:false, showAdv:false,
+  items:{}, customCats:null,
+  q:'', cat:'all', st:'all',
+  f:null, catForm:null,
+  scan:false, scanMsg:'', scanForForm:false, _handlingScan:false,
+  hit:null, toast:'', scanner:null, sparkles:[],
   setup:{code:'', cfg:'', err:''},
   themes:[
     {k:'pink', n:'ชมพูหวาน', dot:'bg-pink-400'},
     {k:'blue', n:'ฟ้าสดใส', dot:'bg-blue-500'},
-    {k:'emerald', n:'เขียวสบายตา', dot:'bg-emerald-500'},
+    {k:'emerald', n:'เขียวมิ้นต์', dot:'bg-emerald-500'},
+    {k:'violet', n:'ม่วงพาสเทล', dot:'bg-violet-500'},
     {k:'dark', n:'โหมดดำเข้ม', dot:'bg-zinc-900'}
   ],
-  cats:[
-    {k:'bath',n:'ห้องน้ำ',e:'🛁'},
-    {k:'clean',n:'ซักรีด/ทำความสะอาด',e:'🧺'},
-    {k:'skin',n:'สกินแคร์/ของใช้ส่วนตัว',e:'🧴'},
-    {k:'food',n:'ของกิน/ครัว',e:'🍳'},
-    {k:'other',n:'อื่นๆ',e:'📦'}
-  ],
-  sts:[
-    {k:'high',n:'มีเยอะ',bg:'bg-emerald-500',bd:'border-emerald-500'},
-    {k:'mid',n:'เหลือครึ่ง',bg:'bg-amber-400',bd:'border-amber-400'},
-    {k:'low',n:'ใกล้หมด',bg:'bg-red-500',bd:'border-red-500'}
-  ],
+  emojiChoices:['🛁','🧺','🧴','🍳','📦','🧻','🪥','🧼','💊','🐶','🐱','👶','🧹','☕','🍜','💄'],
 
   get ui(){ return THEMES[this.theme] || THEMES.pink; },
+  get allCats(){ return Array.isArray(this.customCats) && this.customCats.length ? this.customCats : DEFAULT_CATS; },
 
   applyThemeClass(){
-    const isDark = !!this.ui.isDark;
-    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle('dark', !!this.ui.isDark);
     const meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.setAttribute('content', this.ui.metaColor);
   },
@@ -494,7 +603,7 @@ Alpine.data('app', () => ({
     this.theme = k;
     localStorage.setItem('stocky_theme', k);
     this.applyThemeClass();
-    this.flash('เปลี่ยนธีมเป็น ' + (this.themes.find(x=>x.k===k)?.n || k));
+    this.flash('เปลี่ยนธีมเป็น ' + (this.themes.find(x=>x.k===k)?.n || k) + ' ✨');
   },
 
   init(){
@@ -503,6 +612,7 @@ Alpine.data('app', () => ({
     this.setup.cfg = this.cfg ? JSON.stringify(this.cfg, null, 1) : '';
     if(!this.code || !this.cfg) return;
     this.items = L('cache_' + this.code) || {};
+    this.customCats = L('cats_' + this.code) || null;
     this.ready = true;
     try{
       db = getDatabase(initializeApp(this.cfg));
@@ -511,6 +621,13 @@ Alpine.data('app', () => ({
         this.items = s.val() || {};
         localStorage.setItem('cache_' + this.code, JSON.stringify(this.items));
       }, e => this.flash('อ่านข้อมูลไม่ได้: ' + e.code));
+      onValue(ref(db, this.base() + 'cats'), s => {
+        const val = s.val();
+        if(Array.isArray(val) && val.length){
+          this.customCats = val;
+          localStorage.setItem('cats_' + this.code, JSON.stringify(val));
+        }
+      });
     }catch(e){
       this.flash('Firebase config ผิดพลาด');
     }
@@ -518,6 +635,17 @@ Alpine.data('app', () => ({
 
   base(){ return 'households/' + this.code + '/'; },
   flash(m){ this.toast = m; clearTimeout(this._t); this._t = setTimeout(() => this.toast = '', 2200); },
+  burst(emojis=['✨','🛍️','🎉','💖']){
+    const batch = Array.from({length:8}, (_,idx)=>({
+      id: Date.now() + idx + Math.random(),
+      e: emojis[idx % emojis.length],
+      x: 20 + Math.random()*60,
+      y: 45 + Math.random()*25
+    }));
+    this.sparkles.push(...batch);
+    setTimeout(()=>{ this.sparkles = this.sparkles.filter(s => !batch.includes(s)); }, 1000);
+  },
+
   parseCfg(s){
     const m = s.match(/\{[^{}]*apiKey[^{}]*\}/);
     if(!m) throw Error('ไม่พบ apiKey ใน config');
@@ -539,56 +667,131 @@ Alpine.data('app', () => ({
     }
   },
 
+  // คำนวณสถานะอัตโนมัติ: มีของอยู่ (ok) / ใกล้หมด (low) / หมดแล้ว (out)
+  getState(i){
+    const qty = Number(i?.qty) || 0;
+    const min = Number(i?.min) || 0;
+    if(qty <= 0) return 'out';
+    if(min > 0 && qty <= min) return 'low';
+    return 'ok';
+  },
+  stateMeta(i){
+    const s = this.getState(i);
+    if(s === 'out') return {k:'out', label:'หมดแล้ว', bar:'bg-rose-500', badge:'bg-rose-500/15 text-rose-600 dark:text-rose-400'};
+    if(s === 'low') return {k:'low', label:'ใกล้หมด', bar:'bg-amber-400', badge:'bg-amber-400/20 text-amber-700 dark:text-amber-300'};
+    return {k:'ok', label:'มีของอยู่', bar:'bg-emerald-500', badge:'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'};
+  },
+  countByState(k){ return this.list.filter(i => this.getState(i) === k).length; },
+
   get list(){ return Object.entries(this.items).map(([id, v]) => ({id, ...v})); },
   get filtered(){
     const q = this.q.trim().toLowerCase();
     return this.list
       .filter(i =>
         (this.cat === 'all' || (i.cat || 'other') === this.cat) &&
-        (this.st === 'all' || (i.status || 'high') === this.st) &&
+        (this.st === 'all' || this.getState(i) === this.st) &&
         (!q || (i.name || '').toLowerCase().includes(q) || String(i.barcode || '').includes(q))
       )
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'th'));
   },
-  byCat(k){ return this.filtered.filter(i => (i.cat || 'other') === k); },
-  catOf(k){ return this.cats.find(c => c.k === k) || this.cats[4]; },
-  stOf(i){ return this.sts.find(s => s.k === (i.status || 'high')) || this.sts[0]; },
-  onList(i){ return i.status === 'low' || !!i.onList || (Number(i.min) > 0 && Number(i.qty || 0) <= Number(i.min)); },
+  byCat(k){
+    const validKeys = new Set(this.allCats.map(c => c.k));
+    return this.filtered.filter(i => {
+      const ck = validKeys.has(i.cat) ? i.cat : 'other';
+      return ck === k;
+    });
+  },
+  catOf(k){ return this.allCats.find(c => c.k === k) || this.allCats.find(c => c.k === 'other') || DEFAULT_CATS[4]; },
+
+  // รายการต้องซื้ออัตโนมัติ: หมดแล้ว หรือ ใกล้หมด หรือกดเพิ่มเข้าลิสต์เอง
+  onList(i){
+    if(i.onList === false && this.getState(i) === 'ok') return false;
+    return this.getState(i) !== 'ok' || !!i.onList;
+  },
   get shopList(){
     return this.list
       .filter(i => this.onList(i))
       .sort((a, b) => !!a.inCart - !!b.inCart || (a.name || '').localeCompare(b.name || '', 'th'));
   },
+  get checkedCount(){ return this.shopList.filter(i => i.inCart).length; },
   get total(){ return this.shopList.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
   get totalChecked(){ return this.shopList.filter(i => i.inCart).reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
   fmt(n){ return Number(n || 0).toLocaleString('th-TH', {maximumFractionDigits: 2}); },
   ago(t){ const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'วันนี้' : d + ' วันก่อน'; },
 
+  // จัดการหมวดหมู่เอง
+  openCatModal(c = null){
+    this.catForm = c ? {k: c.k, n: c.n, e: c.e, isEdit: true} : {k: 'cat_' + Date.now(), n: '', e: '✨', isEdit: false};
+  },
+  saveCat(){
+    if(!this.catForm || !this.catForm.n.trim()) return this.flash('กรอกชื่อหมวดหมู่ก่อน');
+    const next = [...this.allCats];
+    const clean = {k: this.catForm.k, n: this.catForm.n.trim(), e: (this.catForm.e || '📦').trim()};
+    const idx = next.findIndex(x => x.k === clean.k);
+    if(idx >= 0) next[idx] = clean; else next.push(clean);
+    this.customCats = next;
+    localStorage.setItem('cats_' + this.code, JSON.stringify(next));
+    set(ref(db, this.base() + 'cats'), next).catch(() => {});
+    if(this.f && !this.catForm.isEdit) this.f.cat = clean.k;
+    this.catForm = null;
+    this.flash('บันทึกหมวดหมู่แล้ว ' + clean.e);
+  },
+  delCat(c){
+    if(c.k === 'other') return;
+    if(!confirm('ลบหมวด "' + c.n + '" ? (สินค้าในหมวดนี้จะย้ายไปอยู่หมวดอื่นๆ)')) return;
+    const next = this.allCats.filter(x => x.k !== c.k);
+    this.customCats = next;
+    localStorage.setItem('cats_' + this.code, JSON.stringify(next));
+    set(ref(db, this.base() + 'cats'), next).catch(() => {});
+    if(this.cat === c.k) this.cat = 'all';
+    this.flash('ลบหมวดหมู่แล้ว');
+  },
+
+  // จัดการสินค้า
   save(id, patch){ update(ref(db, this.base() + 'items/' + id), patch).catch(e => this.flash('บันทึกไม่ได้: ' + e.code)); },
-  dec(i){ const q = Math.max(0, (Number(i.qty) || 0) - 1); this.save(i.id, {qty: q, lastOpened: Date.now()}); },
-  add(pre = {}){ this.f = {name:'', cat:'other', barcode:'', img:'', imgUrl:'', qty:1, min:0, price:0, status:'high', ...pre}; },
+  dec(i){
+    const q = Math.max(0, (Number(i.qty) || 0) - 1);
+    const patch = {qty: q, lastOpened: Date.now()};
+    if(q === 0 || (Number(i.min) > 0 && q <= Number(i.min))) patch.onList = true;
+    this.save(i.id, patch);
+  },
+  inc(i){
+    const q = (Number(i.qty) || 0) + 1;
+    const min = Number(i.min) || 0;
+    const patch = {qty: q};
+    if(q > min) patch.onList = false;
+    this.save(i.id, patch);
+  },
+  add(pre = {}){
+    const defaultCat = this.cat !== 'all' ? this.cat : (this.allCats[0]?.k || 'other');
+    this.f = {name:'', cat:defaultCat, barcode:'', img:'', imgUrl:'', qty:1, min:1, price:0, ...pre};
+  },
   edit(i){ this.f = {...i, imgUrl: /^https?:/.test(i.img || '') ? i.img : ''}; },
   commit(){
     const f = this.f;
-    if(!f || !f.name || !f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อน');
+    if(!f || !f.name || !f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อนน้า');
+    const qty = Number(f.qty) || 0;
+    const min = Number(f.min) || 0;
     const data = {
       name: f.name.trim(),
       cat: f.cat || 'other',
       barcode: String(f.barcode || '').trim(),
       img: f.img || '',
-      qty: Number(f.qty) || 0,
-      min: Number(f.min) || 0,
+      qty,
+      min,
       price: Number(f.price) || 0,
-      status: f.status || 'high'
+      onList: qty <= 0 || (min > 0 && qty <= min) ? true : !!f.onList
     };
     if(f.id) this.save(f.id, data);
     else set(push(ref(db, this.base() + 'items')), {...data, buy: 1, createdAt: Date.now()});
     this.f = null;
+    this.flash('บันทึกเรียบร้อย ✨');
   },
   del(){
-    if(confirm('ลบสินค้านี้?')){
+    if(confirm('ลบรายการนี้ออกจากคลัง?')){
       set(ref(db, this.base() + 'items/' + this.f.id), null);
       this.f = null;
+      this.flash('ลบรายการแล้ว');
     }
   },
   toggleAllCart(val){
@@ -601,12 +804,14 @@ Alpine.data('app', () => ({
     this.shopList.filter(i => i.inCart).forEach(i => {
       const p = i.id + '/';
       up[p + 'qty'] = (Number(i.qty) || 0) + (Number(i.buy) || 1);
-      up[p + 'status'] = 'high';
       up[p + 'onList'] = false;
       up[p + 'inCart'] = false;
       up[p + 'buy'] = 1;
     });
-    update(ref(db, this.base() + 'items'), up).then(() => this.flash('เติมสต็อกแล้ว ✅'));
+    update(ref(db, this.base() + 'items'), up).then(() => {
+      this.burst(['🎉','✨','🛍️','🐰']);
+      this.flash('เติมของเข้าคลังเรียบร้อย! 🎉');
+    });
   },
 
   // รูปภาพ
@@ -661,7 +866,7 @@ Alpine.data('app', () => ({
     if(found){
       this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
     }else{
-      this.flash('ไม่พบบาร์โค้ด ' + code + ' ในสต็อก');
+      this.flash('ไม่พบบาร์โค้ด ' + code + ' เพิ่มใหม่ได้เลย');
       this.add({barcode: code});
       this._handlingScan = false;
     }
@@ -670,7 +875,7 @@ Alpine.data('app', () => ({
   // สำรองข้อมูล
   exportJson(){
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify({version: 1, exportedAt: new Date().toISOString(), items: this.items}, null, 1)], {type: 'application/json'}));
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({version: 2, exportedAt: new Date().toISOString(), cats: this.allCats, items: this.items}, null, 1)], {type: 'application/json'}));
     a.download = 'stocky-' + new Date().toISOString().slice(0, 10) + '.json';
     a.click();
   },
@@ -681,7 +886,9 @@ Alpine.data('app', () => ({
       const d = JSON.parse(t);
       if(!d.items) throw Error();
       if(!confirm('เขียนทับสินค้าทั้งหมดด้วยไฟล์นี้?')) return;
-      return set(ref(db, this.base() + 'items'), d.items).then(() => this.flash('นำเข้าสำเร็จ'));
+      const tasks = [set(ref(db, this.base() + 'items'), d.items)];
+      if(Array.isArray(d.cats) && d.cats.length) tasks.push(set(ref(db, this.base() + 'cats'), d.cats));
+      return Promise.all(tasks).then(() => this.flash('นำเข้าสำเร็จ ✨'));
     }).catch(() => this.flash('ไฟล์ไม่ถูกต้อง'));
     ev.target.value = '';
   }
