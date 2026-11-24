@@ -31,20 +31,9 @@ button:active{transform:scale(.94)}
 }
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-90px) scale(1.3)}}
 .sparkle{animation:floatUp .95s ease-out forwards}
-#rotate-guard{display:none}
-@media (orientation: landscape) and (max-height: 500px){
-  #rotate-guard{display:flex}
-}
 </style>
 </head>
 <body class="min-h-screen dot-bg transition-colors duration-200 selection:bg-pink-300/40" :class="ui.body" :style="ui.dotStyle" x-data="app" x-cloak>
-
-<!-- แจ้งเตือนเมื่อมือถือหมุนแนวนอน (กรณีเครื่องไม่ยอมล็อก orientation) -->
-<div id="rotate-guard" class="fixed inset-0 z-[100] bg-zinc-950/95 text-white flex-col items-center justify-center p-6 text-center gap-2">
-  <p class="text-4xl">📱</p>
-  <p class="font-extrabold text-base">แนะนำให้ใช้งานในแนวตั้ง</p>
-  <p class="text-xs opacity-75 max-w-xs">หมุนเครื่องกลับเป็นแนวตั้งเพื่อใช้งานปุ่มและกล้องสแกนได้ถนัดที่สุด</p>
-</div>
 
 <!-- ตั้งค่าครั้งแรก -->
 <template x-if="!ready">
@@ -485,7 +474,7 @@ button:active{transform:scale(.94)}
     <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-zinc-950">
       <div :id="readerId" class="w-full h-full"></div>
       <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <div class="w-72 h-32 rounded-2xl border-2 border-pink-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] relative overflow-hidden">
+        <div class="w-80 h-36 rounded-2xl border-2 border-pink-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] relative overflow-hidden">
           <div class="absolute inset-x-2 top-1/2 h-0.5 bg-rose-500/80"></div>
         </div>
       </div>
@@ -938,7 +927,7 @@ Alpine.data('app', () => ({
     ev.target.value = '';
   },
 
-  // บาร์โค้ด
+  // บาร์โค้ด: ปรับกรอบและโฟกัสให้สแกนระยะไกลขึ้นได้
   openScan(forForm = false){
     this.lockPortrait();
     const seq = ++this._scanSeq;
@@ -970,7 +959,12 @@ Alpine.data('app', () => ({
           {facingMode: 'environment'},
           {
             fps: 15,
-            qrbox: {width: 280, height: 120}
+            qrbox: {width: 320, height: 150},
+            videoConstraints: {
+              facingMode: {ideal: 'environment'},
+              width: {ideal: 1280},
+              height: {ideal: 720}
+            }
           },
           code => this.onScan(code),
           () => {}
@@ -979,7 +973,13 @@ Alpine.data('app', () => ({
           await this.stopScannerOnly();
           return;
         }
-        this.scanMsg = 'ถือบาร์โค้ดห่างกล้องประมาณ 10–15 ซม. ให้ตรงเส้นแดง';
+        try{
+          const track = this.getVideoTrack();
+          if(track && typeof track.applyConstraints === 'function'){
+            await track.applyConstraints({advanced: [{focusMode: 'continuous'}]});
+          }
+        }catch{}
+        this.scanMsg = 'ถือห่างจากบาร์โค้ดได้พอประมาณ (15–35 ซม.) ให้ตรงเส้นแดง';
       }catch(e){
         if(seq === this._scanSeq){
           this.scanMsg = 'เปิดกล้องไม่ได้ กรุณาอนุญาตกล้องและเปิดผ่าน HTTPS';
