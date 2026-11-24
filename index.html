@@ -101,7 +101,7 @@ button:active{transform:scale(.94)}
         <span class="block text-base font-extrabold leading-tight" :class="st!=='low'&&'text-amber-600 dark:text-amber-400'" x-text="countByState('low')"></span>
         <span class="block text-[11px] font-bold mt-0.5">ใกล้หมด</span>
       </button>
-      <button type="button" @click="st='out'" class="rounded-2xl border-2 py-2.5 px-1.5 text-center transition shadow-xs" :class="st==='out'?'bg-rose-600 border-rose-600 text-white':'bg-rose-50/90 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-950 dark:text-rose-200'">
+      <button type="button" @click="st='out'" class="rounded-2xl border-2 py-2.5 px-1.5 text-center transition shadow-xs" :class="st==='out'?'bg-rose-600 border-rose-600 text-white':'bg-rose-50/90 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-200'">
         <span class="block text-base font-extrabold leading-tight" :class="st!=='out'&&'text-rose-600 dark:text-rose-400'" x-text="countByState('out')"></span>
         <span class="block text-[11px] font-bold mt-0.5">หมดแล้ว</span>
       </button>
@@ -918,11 +918,11 @@ Alpine.data('app', () => ({
     ev.target.value = '';
   },
 
-  // บาร์โค้ด: ปิด-เปิดใหม่ซ้ำได้เสถียรขึ้น + fallback หลายโหมด
+  // บาร์โค้ด: ใช้แนวทางเปิดกล้องแบบเรียบง่ายเหมือนรอบแรก
   openScan(forForm = false){
     const seq = ++this._scanSeq;
     this.scanForForm = forForm;
-    this.readerId = 'reader-' + seq + '-' + Math.random().toString(36).slice(2, 6);
+    this.readerId = 'reader-' + seq;
     this.scan = true;
     this.torchOn = false;
     this.scanMsg = 'กำลังเปิดกล้อง...';
@@ -930,15 +930,9 @@ Alpine.data('app', () => ({
 
     this.$nextTick(async () => {
       await this.stopScannerOnly();
-      await new Promise(r => setTimeout(r, 120));
       if(seq !== this._scanSeq || !this.scan) return;
-
       try{
         if(typeof Html5Qrcode === 'undefined') throw Error('ไม่พบไลบรารีสแกน');
-        const el = document.getElementById(this.readerId);
-        if(!el) throw Error('ไม่พบกล่องกล้อง');
-        el.innerHTML = '';
-
         const formats = typeof Html5QrcodeSupportedFormats !== 'undefined' ? [
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -951,42 +945,15 @@ Alpine.data('app', () => ({
 
         const inst = new Html5Qrcode(this.readerId, formats ? {formatsToSupport: formats, verbose: false} : {verbose: false});
         this.scanner = inst;
-
-        const scanCfg = {fps: 15, qrbox: {width: 280, height: 120}};
-        const attempts = [
-          {facingMode: {ideal: 'environment'}},
-          'environment',
-          {facingMode: 'environment'}
-        ];
-
-        let started = false;
-        let lastErr = null;
-        for(const cam of attempts){
-          if(seq !== this._scanSeq || !this.scan) break;
-          try{
-            await inst.start(cam, scanCfg, code => this.onScan(code), () => {});
-            started = true;
-            break;
-          }catch(err){
-            lastErr = err;
-            try{ if(inst.isScanning) await inst.stop(); }catch{}
-          }
-        }
-
-        if(!started){
-          if(navigator.mediaDevices?.enumerateDevices){
-            const devs = await navigator.mediaDevices.enumerateDevices();
-            const cams = devs.filter(d => d.kind === 'videoinput');
-            const backCam = cams.find(d => /back|rear|environment/i.test(d.label)) || cams[cams.length - 1] || cams[0];
-            if(backCam?.deviceId){
-              await inst.start(backCam.deviceId, scanCfg, code => this.onScan(code), () => {});
-              started = true;
-            }
-          }
-        }
-
-        if(!started) throw lastErr || Error('เปิดกล้องไม่สำเร็จ');
-
+        await inst.start(
+          {facingMode: 'environment'},
+          {
+            fps: 15,
+            qrbox: {width: 280, height: 120}
+          },
+          code => this.onScan(code),
+          () => {}
+        );
         if(seq !== this._scanSeq || !this.scan){
           await this.stopScannerOnly();
           return;
@@ -994,12 +961,7 @@ Alpine.data('app', () => ({
         this.scanMsg = 'ถือบาร์โค้ดห่างกล้องประมาณ 10–15 ซม. ให้ตรงเส้นแดง';
       }catch(e){
         if(seq === this._scanSeq){
-          const reason = e?.name === 'NotAllowedError' || e?.name === 'PermissionDeniedError'
-            ? 'กรุณาอนุญาตสิทธิ์การใช้กล้องในเบราว์เซอร์'
-            : (location.protocol !== 'https:' && location.hostname !== 'localhost'
-              ? 'ต้องเปิดผ่าน HTTPS ถึงจะใช้กล้องได้'
-              : 'เปิดกล้องไม่ได้ (' + (e?.name || e?.message || 'ลองปิดหน้านี้แล้วเปิดใหม่') + ')');
-          this.scanMsg = reason;
+          this.scanMsg = 'เปิดกล้องไม่ได้ กรุณาอนุญาตกล้องและเปิดผ่าน HTTPS';
         }
       }
     });
@@ -1050,9 +1012,6 @@ Alpine.data('app', () => ({
         try{ vid.srcObject.getTracks().forEach(t => t.stop()); }catch{}
         vid.srcObject = null;
       }
-    });
-    document.querySelectorAll('[id^="reader"]').forEach(box => {
-      box.innerHTML = '';
     });
   },
 
