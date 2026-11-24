@@ -31,9 +31,20 @@ button:active{transform:scale(.94)}
 }
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-90px) scale(1.3)}}
 .sparkle{animation:floatUp .95s ease-out forwards}
+#rotate-guard{display:none}
+@media (orientation: landscape) and (max-height: 500px){
+  #rotate-guard{display:flex}
+}
 </style>
 </head>
 <body class="min-h-screen dot-bg transition-colors duration-200 selection:bg-pink-300/40" :class="ui.body" :style="ui.dotStyle" x-data="app" x-cloak>
+
+<!-- แจ้งเตือนเมื่อมือถือหมุนแนวนอน (กรณีเครื่องไม่ยอมล็อก orientation) -->
+<div id="rotate-guard" class="fixed inset-0 z-[100] bg-zinc-950/95 text-white flex-col items-center justify-center p-6 text-center gap-2">
+  <p class="text-4xl">📱</p>
+  <p class="font-extrabold text-base">แนะนำให้ใช้งานในแนวตั้ง</p>
+  <p class="text-xs opacity-75 max-w-xs">หมุนเครื่องกลับเป็นแนวตั้งเพื่อใช้งานปุ่มและกล้องสแกนได้ถนัดที่สุด</p>
+</div>
 
 <!-- ตั้งค่าครั้งแรก -->
 <template x-if="!ready">
@@ -642,6 +653,14 @@ Alpine.data('app', () => ({
   get ui(){ return THEMES[this.theme] || THEMES.pink; },
   get allCats(){ return Array.isArray(this.customCats) && this.customCats.length ? this.customCats : DEFAULT_CATS; },
 
+  lockPortrait(){
+    try{
+      if(screen?.orientation && typeof screen.orientation.lock === 'function'){
+        screen.orientation.lock('portrait').catch(() => {});
+      }
+    }catch{}
+  },
+
   applyThemeClass(){
     const isDark = !!this.ui.isDark;
     document.documentElement.classList.toggle('dark', isDark);
@@ -662,6 +681,7 @@ Alpine.data('app', () => ({
   },
 
   init(){
+    this.lockPortrait();
     this.applyThemeClass();
     document.addEventListener('gesturestart', e => e.preventDefault(), {passive:false});
     this.setup.code = this.code;
@@ -918,8 +938,9 @@ Alpine.data('app', () => ({
     ev.target.value = '';
   },
 
-  // บาร์โค้ด: ใช้แนวทางเปิดกล้องแบบเรียบง่ายเหมือนรอบแรก
+  // บาร์โค้ด
   openScan(forForm = false){
+    this.lockPortrait();
     const seq = ++this._scanSeq;
     this.scanForForm = forForm;
     this.readerId = 'reader-' + seq;
