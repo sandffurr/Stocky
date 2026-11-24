@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>Stocky</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#f472b6">
@@ -16,15 +16,24 @@
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 [x-cloak]{display:none!important}
-body{-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top)}
+html,body{
+  -webkit-tap-highlight-color:transparent;
+  padding-top:env(safe-area-inset-top);
+  touch-action:pan-x pan-y;
+}
+button,a,input,select,label{touch-action:manipulation}
 .pb-safe{padding-bottom:env(safe-area-inset-bottom)}
 button{transition:transform .14s cubic-bezier(.34,1.56,.64,1),background-color .15s,opacity .15s}
 button:active{transform:scale(.94)}
+.dot-bg{
+  background-image:radial-gradient(var(--dot-color, rgba(244,114,182,.22)) 1.25px, transparent 1.25px);
+  background-size:18px 18px;
+}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(.8)}100%{opacity:0;transform:translateY(-90px) scale(1.3)}}
 .sparkle{animation:floatUp .95s ease-out forwards}
 </style>
 </head>
-<body class="min-h-screen transition-colors duration-200 selection:bg-pink-300/40" :class="ui.body" x-data="app" x-cloak>
+<body class="min-h-screen dot-bg transition-colors duration-200 selection:bg-pink-300/40" :class="ui.body" :style="ui.dotStyle" x-data="app" x-cloak>
 
 <!-- ตั้งค่าครั้งแรก -->
 <template x-if="!ready">
@@ -62,7 +71,7 @@ button:active{transform:scale(.94)}
 <template x-if="ready">
 <div class="pb-36">
   <!-- HEADER -->
-  <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-3 flex items-center justify-between" :class="ui.header">
+  <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-3 flex items-center justify-between" :class="ui.header" :style="'background-color:'+ui.headerBg">
     <div class="flex items-center gap-2">
       <span class="text-xl">🐰</span>
       <span class="font-extrabold text-lg tracking-tight" :class="ui.accentText">Stocky</span>
@@ -134,12 +143,10 @@ button:active{transform:scale(.94)}
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <template x-for="i in byCat(c.k)" :key="i.id">
             <div class="rounded-3xl border p-3 flex flex-col justify-between gap-2.5 shadow-xs relative overflow-hidden" :class="ui.card">
-              <!-- แถบสีสถานะด้านบนการ์ด -->
               <div class="absolute top-0 inset-x-0 h-1" :class="stateMeta(i).bar"></div>
 
-              <!-- รูป + ชื่อ + ป้ายสถานะอัตโนมัติ -->
               <div class="flex gap-2.5 items-start cursor-pointer pt-0.5" @click="edit(i)">
-                <div class="w-13 h-13 w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+                <div class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
                   <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
                   <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
                 </div>
@@ -149,13 +156,11 @@ button:active{transform:scale(.94)}
                 </div>
               </div>
 
-              <!-- ข้อมูลเสริม: แกะล่าสุด / ราคา -->
               <div class="flex items-center justify-between text-[11px] opacity-65 px-0.5">
                 <span x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></span>
                 <span x-show="i.price>0">฿<span x-text="fmt(i.price)"></span></span>
               </div>
 
-              <!-- ปุ่มปรับจำนวนคงเหลือ - / + -->
               <div class="flex items-center justify-between gap-1 rounded-2xl p-1 border" :class="ui.softBtn">
                 <button type="button" @click="dec(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
                 <div class="text-center leading-none">
@@ -165,7 +170,6 @@ button:active{transform:scale(.94)}
                 <button type="button" @click="inc(i)" class="w-9 h-9 rounded-xl text-lg font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
               </div>
 
-              <!-- ปุ่มสลับเข้า/ออกจากลิสต์ซื้อ -->
               <button type="button" @click="save(i.id,{onList:!onList(i),buy:i.buy||1})" class="w-full py-2 rounded-2xl text-xs font-bold border" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 อยู่ในลิสต์ ('+(i.buy||1)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
             </div>
           </template>
@@ -176,7 +180,6 @@ button:active{transform:scale(.94)}
 
   <!-- SHOPPING -->
   <section x-show="tab==='shop'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <!-- การ์ดสรุปงบ + แถบ Progress -->
     <div class="rounded-3xl p-4 shadow-sm space-y-3" :class="ui.primary">
       <div class="grid grid-cols-2 gap-2.5 text-center">
         <div class="rounded-2xl bg-black/10 p-2.5">
@@ -218,9 +221,7 @@ button:active{transform:scale(.94)}
             <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1.5">
-              <p class="font-bold text-sm leading-snug break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
-            </div>
+            <p class="font-bold text-sm leading-snug break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
             <p class="text-[11px] opacity-65 mt-0.5">
               <span class="font-semibold" :class="Number(i.qty)<=0?'text-rose-500':'text-amber-500'" x-text="Number(i.qty)<=0?'หมดแล้ว':'เหลือ '+i.qty"></span>
               · ฿<span x-text="fmt(i.price||0)"></span>/ชิ้น
@@ -246,9 +247,8 @@ button:active{transform:scale(.94)}
     <button type="button" @click="restock()" :disabled="!shopList.some(i=>i.inCart)" class="w-full py-4 rounded-2xl disabled:opacity-40 font-extrabold text-base shadow-sm" :class="ui.primary">🛍️ ยืนยันการซื้อ & เติมเข้าสต็อก</button>
   </section>
 
-  <!-- SETTINGS (แยกตั้งค่าทั่วไป กับ ตั้งค่าระบบหลังบ้าน) -->
+  <!-- SETTINGS -->
   <section x-show="tab==='set'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <!-- 1. ธีมสี -->
     <div class="rounded-3xl border p-4 space-y-3 shadow-xs" :class="ui.card">
       <div>
         <p class="font-bold text-base">🎨 ธีมสีของแอป</p>
@@ -264,7 +264,6 @@ button:active{transform:scale(.94)}
       </div>
     </div>
 
-    <!-- 2. จัดการหมวดหมู่ของใช้ -->
     <div class="rounded-3xl border p-4 space-y-3 shadow-xs" :class="ui.card">
       <div class="flex items-center justify-between">
         <div>
@@ -289,7 +288,6 @@ button:active{transform:scale(.94)}
       </div>
     </div>
 
-    <!-- 3. รหัสบ้านสำหรับแชร์ให้คนในบ้าน -->
     <div class="rounded-3xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
       <div>
         <p class="font-bold text-base">🏠 รหัสบ้าน (แชร์ซิงก์ข้อมูล)</p>
@@ -302,7 +300,6 @@ button:active{transform:scale(.94)}
       </div>
     </div>
 
-    <!-- 4. ตั้งค่าระบบหลังบ้าน (ซ่อนไว้ลึกๆ กดเปิดเฉพาะตอนจำเป็น) -->
     <div class="pt-4">
       <button type="button" @click="showAdv=!showAdv" class="w-full py-3 rounded-2xl border text-xs font-semibold opacity-70 flex items-center justify-center gap-1.5" :class="ui.softBtn">
         <span>🛠️ ตั้งค่าระบบหลังบ้าน & สำรองข้อมูล</span>
@@ -338,7 +335,7 @@ button:active{transform:scale(.94)}
   </div>
 
   <!-- แท็บบาร์ -->
-  <nav class="fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-3 pb-safe" :class="ui.nav">
+  <nav class="fixed bottom-0 inset-x-0 z-30 border-t grid grid-cols-3 pb-safe" :class="ui.nav" :style="'background-color:'+ui.navBg">
     <button type="button" @click="tab='inv'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='inv'?ui.navActive:'opacity-60'"><span class="text-lg">🏠</span><span>คลังของใช้</span></button>
     <button type="button" @click="tab='shop'" class="py-2.5 text-xs font-semibold flex flex-col items-center gap-0.5 relative" :class="tab==='shop'?ui.navActive:'opacity-60'"><span class="text-lg">🛒</span><span>ต้องซื้อ</span>
       <span x-show="shopList.length" class="absolute top-1.5 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
@@ -398,7 +395,6 @@ button:active{transform:scale(.94)}
           </label>
         </div>
 
-        <!-- พรีวิวสถานะอัตโนมัติ -->
         <div class="rounded-2xl p-2.5 border flex items-center justify-between text-xs" :class="ui.softBtn">
           <span>สถานะอัตโนมัติ:</span>
           <span class="px-2.5 py-1 rounded-full font-bold" :class="stateMeta(f).badge" x-text="stateMeta(f).label"></span>
@@ -441,9 +437,26 @@ button:active{transform:scale(.94)}
 
   <!-- สแกนเนอร์ -->
   <div x-show="scan" class="fixed inset-0 z-50 bg-black flex flex-col p-4 gap-3">
-    <div id="reader" class="w-full rounded-2xl overflow-hidden bg-black"></div>
-    <p class="text-white text-center text-sm" x-text="scanMsg"></p>
-    <button type="button" @click="closeScan()" class="mt-auto py-4 rounded-2xl bg-white text-slate-900 font-bold">ปิดกล้อง</button>
+    <div class="flex items-center justify-between text-white">
+      <span class="text-sm font-bold">📷 สแกนบาร์โค้ด</span>
+      <div class="flex gap-2">
+        <button type="button" x-show="hasTorch" @click="toggleTorch()" class="px-3 py-1.5 rounded-full text-xs font-bold border border-white/30" :class="torchOn?'bg-amber-400 text-slate-900 border-amber-400':'bg-white/10 text-white'" x-text="torchOn?'🔦 ปิดไฟฉาย':'🔦 เปิดไฟฉาย'"></button>
+        <button type="button" @click="closeScan()" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white/15 text-white">✕</button>
+      </div>
+    </div>
+
+    <div class="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-zinc-950">
+      <video id="scanVideo" class="w-full h-full object-cover" playsinline muted autoplay></video>
+      <div id="readerFallback" class="w-full hidden"></div>
+      <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <div class="w-72 h-36 rounded-2xl border-2 border-pink-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] relative overflow-hidden">
+          <div class="absolute inset-x-2 top-1/2 h-0.5 bg-rose-500/80"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-white text-center text-xs opacity-85" x-text="scanMsg"></p>
+    <button type="button" @click="closeScan()" class="py-3.5 rounded-2xl bg-white text-slate-900 font-extrabold">ปิดกล้อง</button>
   </div>
 
   <!-- ผลสแกนเจอสินค้าเดิม -->
@@ -509,7 +522,8 @@ const DEFAULT_CATS = [
 
 const THEMES = {
   pink: {
-    isDark:false, metaColor:'#f472b6',
+    isDark:false, metaColor:'#fdf2f8', headerBg:'rgba(253,242,248,0.92)', navBg:'rgba(255,255,255,0.96)',
+    dotStyle:'--dot-color:rgba(244,114,182,.22)',
     body:'bg-pink-50 text-slate-800', header:'bg-pink-50/90 border-pink-200/80',
     card:'bg-white border-pink-100', modal:'bg-white border-pink-100 text-slate-800',
     nav:'bg-white/95 border-pink-200/80', navActive:'text-pink-500 font-extrabold',
@@ -517,10 +531,11 @@ const THEMES = {
     pill:'bg-pink-100 text-pink-700', chip:'bg-white border-pink-200/80 text-slate-700',
     chipActive:'bg-pink-500 border-pink-500 text-white', input:'bg-white border-pink-200 text-slate-800 focus:border-pink-400',
     thumb:'bg-pink-50 border-pink-100', stepBtn:'bg-pink-50/80 border-pink-200/70 text-slate-800',
-    softBtn:'bg-pink-50/60 border-pink-200/80 text-slate-700', fabSec:'bg-white border-pink-200 text-slate-800'
+    softBtn:'bg-pink-50/70 border-pink-200/80 text-slate-700', fabSec:'bg-white border-pink-200 text-slate-800'
   },
   blue: {
-    isDark:false, metaColor:'#3b82f6',
+    isDark:false, metaColor:'#f0f9ff', headerBg:'rgba(240,249,255,0.92)', navBg:'rgba(255,255,255,0.96)',
+    dotStyle:'--dot-color:rgba(59,130,246,.20)',
     body:'bg-sky-50 text-slate-800', header:'bg-sky-50/90 border-sky-200/80',
     card:'bg-white border-sky-100', modal:'bg-white border-sky-100 text-slate-800',
     nav:'bg-white/95 border-sky-200/80', navActive:'text-blue-600 font-extrabold',
@@ -528,10 +543,11 @@ const THEMES = {
     pill:'bg-sky-100 text-blue-700', chip:'bg-white border-sky-200/80 text-slate-700',
     chipActive:'bg-blue-600 border-blue-600 text-white', input:'bg-white border-sky-200 text-slate-800 focus:border-blue-400',
     thumb:'bg-sky-50 border-sky-100', stepBtn:'bg-sky-50/80 border-sky-200/70 text-slate-800',
-    softBtn:'bg-sky-50/60 border-sky-200/80 text-slate-700', fabSec:'bg-white border-sky-200 text-slate-800'
+    softBtn:'bg-sky-50/70 border-sky-200/80 text-slate-700', fabSec:'bg-white border-sky-200 text-slate-800'
   },
   emerald: {
-    isDark:false, metaColor:'#10b981',
+    isDark:false, metaColor:'#ecfdf5', headerBg:'rgba(236,253,245,0.92)', navBg:'rgba(255,255,255,0.96)',
+    dotStyle:'--dot-color:rgba(16,185,129,.20)',
     body:'bg-emerald-50/70 text-slate-800', header:'bg-emerald-50/90 border-emerald-200/80',
     card:'bg-white border-emerald-100', modal:'bg-white border-emerald-100 text-slate-800',
     nav:'bg-white/95 border-emerald-200/80', navActive:'text-emerald-600 font-extrabold',
@@ -539,10 +555,11 @@ const THEMES = {
     pill:'bg-emerald-100 text-emerald-700', chip:'bg-white border-emerald-200/80 text-slate-700',
     chipActive:'bg-emerald-600 border-emerald-600 text-white', input:'bg-white border-emerald-200 text-slate-800 focus:border-emerald-400',
     thumb:'bg-emerald-50 border-emerald-100', stepBtn:'bg-emerald-50/80 border-emerald-200/70 text-slate-800',
-    softBtn:'bg-emerald-50/60 border-emerald-200/80 text-slate-700', fabSec:'bg-white border-emerald-200 text-slate-800'
+    softBtn:'bg-emerald-50/70 border-emerald-200/80 text-slate-700', fabSec:'bg-white border-emerald-200 text-slate-800'
   },
   violet: {
-    isDark:false, metaColor:'#8b5cf6',
+    isDark:false, metaColor:'#f5f3ff', headerBg:'rgba(245,243,255,0.92)', navBg:'rgba(255,255,255,0.96)',
+    dotStyle:'--dot-color:rgba(139,92,246,.20)',
     body:'bg-violet-50 text-slate-800', header:'bg-violet-50/90 border-violet-200/80',
     card:'bg-white border-violet-100', modal:'bg-white border-violet-100 text-slate-800',
     nav:'bg-white/95 border-violet-200/80', navActive:'text-violet-600 font-extrabold',
@@ -550,10 +567,11 @@ const THEMES = {
     pill:'bg-violet-100 text-violet-700', chip:'bg-white border-violet-200/80 text-slate-700',
     chipActive:'bg-violet-600 border-violet-600 text-white', input:'bg-white border-violet-200 text-slate-800 focus:border-violet-400',
     thumb:'bg-violet-50 border-violet-100', stepBtn:'bg-violet-50/80 border-violet-200/70 text-slate-800',
-    softBtn:'bg-violet-50/60 border-violet-200/80 text-slate-700', fabSec:'bg-white border-violet-200 text-slate-800'
+    softBtn:'bg-violet-50/70 border-violet-200/80 text-slate-700', fabSec:'bg-white border-violet-200 text-slate-800'
   },
   dark: {
-    isDark:true, metaColor:'#09090b',
+    isDark:true, metaColor:'#09090b', headerBg:'rgba(9,9,11,0.92)', navBg:'rgba(9,9,11,0.96)',
+    dotStyle:'--dot-color:rgba(255,255,255,.07)',
     body:'bg-zinc-950 text-zinc-100', header:'bg-zinc-950/90 border-zinc-800',
     card:'bg-zinc-900 border-zinc-800', modal:'bg-zinc-900 border-zinc-800 text-zinc-100',
     nav:'bg-zinc-950/95 border-zinc-800', navActive:'text-pink-400 font-extrabold',
@@ -578,6 +596,7 @@ Alpine.data('app', () => ({
   q:'', cat:'all', st:'all',
   f:null, catForm:null,
   scan:false, scanMsg:'', scanForForm:false, _handlingScan:false,
+  hasTorch:false, torchOn:false, _stream:null, _raf:null, _detector:null,
   hit:null, toast:'', scanner:null, sparkles:[],
   setup:{code:'', cfg:'', err:''},
   themes:[
@@ -593,9 +612,14 @@ Alpine.data('app', () => ({
   get allCats(){ return Array.isArray(this.customCats) && this.customCats.length ? this.customCats : DEFAULT_CATS; },
 
   applyThemeClass(){
-    document.documentElement.classList.toggle('dark', !!this.ui.isDark);
+    const isDark = !!this.ui.isDark;
+    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.style.backgroundColor = this.ui.metaColor;
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
     const meta = document.querySelector('meta[name="theme-color"]');
     if(meta) meta.setAttribute('content', this.ui.metaColor);
+    const statusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if(statusBar) statusBar.setAttribute('content', isDark ? 'black-translucent' : 'default');
   },
 
   setTheme(k){
@@ -608,6 +632,7 @@ Alpine.data('app', () => ({
 
   init(){
     this.applyThemeClass();
+    document.addEventListener('gesturestart', e => e.preventDefault(), {passive:false});
     this.setup.code = this.code;
     this.setup.cfg = this.cfg ? JSON.stringify(this.cfg, null, 1) : '';
     if(!this.code || !this.cfg) return;
@@ -667,7 +692,6 @@ Alpine.data('app', () => ({
     }
   },
 
-  // คำนวณสถานะอัตโนมัติ: มีของอยู่ (ok) / ใกล้หมด (low) / หมดแล้ว (out)
   getState(i){
     const qty = Number(i?.qty) || 0;
     const min = Number(i?.min) || 0;
@@ -703,7 +727,6 @@ Alpine.data('app', () => ({
   },
   catOf(k){ return this.allCats.find(c => c.k === k) || this.allCats.find(c => c.k === 'other') || DEFAULT_CATS[4]; },
 
-  // รายการต้องซื้ออัตโนมัติ: หมดแล้ว หรือ ใกล้หมด หรือกดเพิ่มเข้าลิสต์เอง
   onList(i){
     if(i.onList === false && this.getState(i) === 'ok') return false;
     return this.getState(i) !== 'ok' || !!i.onList;
@@ -719,7 +742,6 @@ Alpine.data('app', () => ({
   fmt(n){ return Number(n || 0).toLocaleString('th-TH', {maximumFractionDigits: 2}); },
   ago(t){ const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'วันนี้' : d + ' วันก่อน'; },
 
-  // จัดการหมวดหมู่เอง
   openCatModal(c = null){
     this.catForm = c ? {k: c.k, n: c.n, e: c.e, isEdit: true} : {k: 'cat_' + Date.now(), n: '', e: '✨', isEdit: false};
   },
@@ -747,7 +769,6 @@ Alpine.data('app', () => ({
     this.flash('ลบหมวดหมู่แล้ว');
   },
 
-  // จัดการสินค้า
   save(id, patch){ update(ref(db, this.base() + 'items/' + id), patch).catch(e => this.flash('บันทึกไม่ได้: ' + e.code)); },
   dec(i){
     const q = Math.max(0, (Number(i.qty) || 0) - 1);
@@ -814,7 +835,6 @@ Alpine.data('app', () => ({
     });
   },
 
-  // รูปภาพ
   urlImg(){ if(this.f) this.f.img = (this.f.imgUrl || '').trim(); },
   pickImg(ev){
     const file = ev.target.files[0];
@@ -834,34 +854,135 @@ Alpine.data('app', () => ({
     ev.target.value = '';
   },
 
-  // บาร์โค้ด
   openScan(forForm = false){
     this.scanForForm = forForm;
     this.scan = true;
-    this.scanMsg = 'เล็งบาร์โค้ดให้อยู่ในกรอบ';
+    this.hasTorch = false;
+    this.torchOn = false;
+    this.scanMsg = 'กำลังเปิดกล้องความละเอียดสูง...';
     this._handlingScan = false;
+
     this.$nextTick(async () => {
+      const formats = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','codabar','itf','qr_code'];
+      if('BarcodeDetector' in window && navigator.mediaDevices?.getUserMedia){
+        try{
+          const supported = BarcodeDetector.getSupportedFormats ? await BarcodeDetector.getSupportedFormats() : formats;
+          const useFormats = formats.filter(f => supported.includes(f));
+          this._detector = new BarcodeDetector({formats: useFormats.length ? useFormats : undefined});
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              facingMode: {ideal: 'environment'},
+              width: {ideal: 1280},
+              height: {ideal: 720},
+              focusMode: {ideal: 'continuous'}
+            }
+          });
+          this._stream = stream;
+          const track = stream.getVideoTracks()[0];
+          const caps = track?.getCapabilities ? track.getCapabilities() : {};
+          if(caps.torch) this.hasTorch = true;
+          if(caps.focusMode && caps.focusMode.includes('continuous')){
+            try{ await track.applyConstraints({advanced: [{focusMode: 'continuous'}]}); }catch{}
+          }
+
+          const vid = document.getElementById('scanVideo');
+          const fb = document.getElementById('readerFallback');
+          if(fb) fb.classList.add('hidden');
+          if(vid){
+            vid.classList.remove('hidden');
+            vid.srcObject = stream;
+            await vid.play();
+          }
+          this.scanMsg = 'จ่อบาร์โค้ดให้ตรงเส้นแดงได้เลยครับ';
+
+          const tick = async () => {
+            if(!this.scan || this._handlingScan || !vid || vid.readyState < 2){
+              if(this.scan && !this._handlingScan) this._raf = requestAnimationFrame(tick);
+              return;
+            }
+            try{
+              const codes = await this._detector.detect(vid);
+              if(codes && codes.length && codes[0].rawValue){
+                this.onScan(codes[0].rawValue);
+                return;
+              }
+            }catch{}
+            if(this.scan && !this._handlingScan) this._raf = requestAnimationFrame(tick);
+          };
+          this._raf = requestAnimationFrame(tick);
+          return;
+        }catch{
+          // ตกลงไปใช้ Html5Qrcode ด้านล่าง
+        }
+      }
+
       try{
-        this.scanner = new Html5Qrcode('reader');
-        await this.scanner.start({facingMode: 'environment'}, {fps: 10, qrbox: {width: 260, height: 140}}, code => this.onScan(code), () => {});
+        const vid = document.getElementById('scanVideo');
+        const fb = document.getElementById('readerFallback');
+        if(vid) vid.classList.add('hidden');
+        if(fb) fb.classList.remove('hidden');
+        this.scanner = new Html5Qrcode('readerFallback');
+        await this.scanner.start(
+          {facingMode: 'environment'},
+          {
+            fps: 18,
+            qrbox: {width: 300, height: 150},
+            experimentalFunctions: {useBarCodeDetectorIfSupported: true}
+          },
+          code => this.onScan(code),
+          () => {}
+        );
+        this.scanMsg = 'จ่อบาร์โค้ดให้ตรงกรอบได้เลยครับ';
       }catch(e){
         this.scanMsg = 'เปิดกล้องไม่ได้ (ต้องเปิดผ่าน https และอนุญาตกล้อง)';
       }
     });
   },
+
+  async toggleTorch(){
+    try{
+      const track = this._stream?.getVideoTracks?.()[0];
+      if(track){
+        const next = !this.torchOn;
+        await track.applyConstraints({advanced: [{torch: next}]});
+        this.torchOn = next;
+        return;
+      }
+      if(this.scanner?.applyVideoConstraints){
+        const next = !this.torchOn;
+        await this.scanner.applyVideoConstraints({advanced: [{torch: next}]});
+        this.torchOn = next;
+      }
+    }catch{
+      this.flash('เครื่องนี้ไม่รองรับการสั่งเปิดไฟฉายผ่านเว็บ');
+    }
+  },
+
   async closeScan(){
+    if(this._raf){ cancelAnimationFrame(this._raf); this._raf = null; }
+    this._detector = null;
+    if(this._stream){
+      this._stream.getTracks().forEach(t => t.stop());
+      this._stream = null;
+    }
+    this.hasTorch = false;
+    this.torchOn = false;
     const sc = this.scanner;
     this.scanner = null;
     this.scan = false;
     try{ if(sc){ await sc.stop(); await sc.clear(); } }catch{}
   },
+
   async onScan(rawCode){
     if(this._handlingScan) return;
     this._handlingScan = true;
     const code = String(rawCode || '').trim();
     await this.closeScan();
     if(!code){ this._handlingScan = false; return; }
-    if(this.scanForForm && this.f){ this.f.barcode = code; this._handlingScan = false; return; }
+    if(navigator.vibrate) navigator.vibrate(40);
+    if(this.scanForForm && this.f){ this.f.barcode = code; this.flash('สแกนบาร์โค้ดแล้ว: ' + code); this._handlingScan = false; return; }
     const found = this.list.find(i => String(i.barcode || '').trim() === code);
     if(found){
       this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
@@ -872,7 +993,6 @@ Alpine.data('app', () => ({
     }
   },
 
-  // สำรองข้อมูล
   exportJson(){
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify({version: 2, exportedAt: new Date().toISOString(), cats: this.allCats, items: this.items}, null, 1)], {type: 'application/json'}));
