@@ -25,6 +25,9 @@ button,a,input,select,label{touch-action:pan-x pan-y}
 @media (max-width:640px){
   input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]):not([type=range]),select,textarea{font-size:16px!important}
 }
+.sk{background:linear-gradient(90deg,rgba(148,163,184,.18),rgba(148,163,184,.34),rgba(148,163,184,.18));background-size:200% 100%;animation:sk 1.3s ease-in-out infinite;border-radius:1rem}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
 .no-scrollbar::-webkit-scrollbar{display:none}
 .no-scrollbar{scrollbar-width:none}
 .pb-safe{padding-bottom:env(safe-area-inset-bottom)}
@@ -94,28 +97,68 @@ button:active{transform:scale(.94)}
   <!-- MyStock -->
   <section x-show="tab==='inv'" class="p-3 space-y-3 max-w-4xl mx-auto">
 
+    <!-- โครงระหว่างรอข้อมูล -->
+    <div x-show="!loaded" class="space-y-3" role="status" aria-busy="true">
+      <span class="sr-only">กำลังโหลดข้อมูล…</span>
+      <div class="sk h-[172px] !rounded-3xl"></div>
+      <div class="sk h-11 !rounded-full"></div>
+      <div class="flex gap-1.5">
+        <div class="sk h-8 w-20 !rounded-full"></div><div class="sk h-8 w-24 !rounded-full"></div><div class="sk h-8 w-20 !rounded-full"></div>
+      </div>
+      <template x-for="n in 3" :key="n">
+        <div class="rounded-3xl border p-3 space-y-3" :class="ui.card">
+          <div class="flex gap-3 items-center">
+            <div class="sk w-[72px] h-[72px] shrink-0"></div>
+            <div class="flex-1 space-y-2">
+              <div class="sk h-4 w-3/4"></div>
+              <div class="sk h-4 w-1/3 !rounded-full"></div>
+              <div class="sk h-2 w-full !rounded-full"></div>
+            </div>
+          </div>
+          <div class="flex gap-2"><div class="sk h-10 w-28 !rounded-full"></div><div class="sk h-9 flex-1 !rounded-full"></div></div>
+        </div>
+      </template>
+    </div>
+
+    <div x-show="loaded" class="space-y-3">
+
+    <!-- คำแนะนำเปิดครั้งแรก -->
+    <div x-show="showTips" x-transition class="rounded-3xl border p-4 space-y-3" :class="ui.card">
+      <div class="flex items-center gap-2.5">
+        <img src="icon-180.png" alt="" class="w-9 h-9 rounded-xl object-cover">
+        <p class="font-extrabold text-sm">ยินดีต้อนรับสู่ Stocky 👋</p>
+      </div>
+      <ul class="text-xs space-y-1.5 opacity-90">
+        <li>➕ กดปุ่ม ＋ มุมขวาล่างเพื่อเพิ่มของ หรือสแกนบาร์โค้ดจากกล้อง</li>
+        <li>➖ ทุกครั้งที่แกะของมาใช้ให้กด − ของใกล้หมดจะเข้า "ต้องซื้อเพิ่ม" ให้เอง</li>
+        <li>💡 ใช้ไปสักพัก Stocky จะแนะนำค่า "เตือนเมื่อเหลือ" ตามที่คุณใช้จริง</li>
+        <li>👨‍👩‍👧 ส่งรหัสบ้านให้คนในบ้าน (ในตั้งค่า) จะเห็นสต็อกชุดเดียวกัน</li>
+      </ul>
+      <button type="button" @click="dismissTips()" class="w-full py-2.5 rounded-2xl text-xs font-bold" :class="ui.primary">เข้าใจแล้ว</button>
+    </div>
+
     <!-- สรุปภาพรวม -->
-    <div class="rounded-3xl p-4 shadow-md" :class="ui.hero">
+    <div class="rounded-3xl p-4 shadow-sm border" :class="ui.hero.box">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-semibold opacity-90">ของใช้ในบ้านทั้งหมด</p>
-          <p class="mt-1 leading-none"><span class="text-4xl font-extrabold" x-text="list.length"></span><span class="text-sm font-bold opacity-90 ml-1.5">รายการ</span></p>
+          <p class="text-xs font-semibold opacity-70">ของใช้ในบ้านทั้งหมด</p>
+          <p class="mt-1 leading-none"><span class="text-4xl font-extrabold" x-text="list.length"></span><span class="text-sm font-bold opacity-70 ml-1.5">รายการ</span></p>
         </div>
-        <div x-show="list.length" class="text-right rounded-2xl bg-white/20 px-3 py-1.5">
-          <p class="text-[11px] font-semibold opacity-90">พร้อมใช้</p>
+        <div x-show="list.length" class="text-right rounded-2xl px-3 py-1.5" :class="ui.hero.badge">
+          <p class="text-[11px] font-semibold opacity-70">พร้อมใช้</p>
           <p class="text-lg font-extrabold leading-tight"><span x-text="Math.round(pct('ok'))"></span>%</p>
         </div>
       </div>
 
-      <div class="mt-3.5 h-2.5 rounded-full bg-white/25 overflow-hidden flex" role="img" aria-label="สัดส่วนสถานะสต็อก">
-        <div class="h-full bg-emerald-300 transition-all duration-500" :style="'width:'+pct('ok')+'%'"></div>
-        <div class="h-full bg-amber-300 transition-all duration-500" :style="'width:'+pct('low')+'%'"></div>
-        <div class="h-full bg-rose-300 transition-all duration-500" :style="'width:'+pct('out')+'%'"></div>
+      <div class="mt-3.5 h-2.5 rounded-full overflow-hidden flex" :class="ui.hero.track" role="img" aria-label="สัดส่วนสถานะสต็อก">
+        <div class="h-full bg-emerald-400 transition-all duration-500" :style="'width:'+pct('ok')+'%'"></div>
+        <div class="h-full bg-amber-400 transition-all duration-500" :style="'width:'+pct('low')+'%'"></div>
+        <div class="h-full bg-rose-400 transition-all duration-500" :style="'width:'+pct('out')+'%'"></div>
       </div>
 
       <div class="mt-3 grid grid-cols-4 gap-1.5">
         <template x-for="f in [['all','ทั้งหมด','bg-slate-400'],['ok','มีของ','bg-emerald-500'],['low','ใกล้หมด','bg-amber-400'],['out','หมดแล้ว','bg-rose-500']]" :key="f[0]">
-          <button type="button" @click="st=f[0]" class="rounded-2xl py-2 px-1 text-center" :class="st===f[0]?'bg-white text-slate-900 shadow-sm':'bg-white/20 text-white'">
+          <button type="button" @click="st=f[0]" class="rounded-2xl py-2 px-1 text-center" :class="st===f[0]?ui.hero.on:ui.hero.off">
             <span class="block text-lg font-extrabold leading-none" x-text="f[0]==='all'?list.length:countByState(f[0])"></span>
             <span class="mt-1 flex items-center justify-center gap-1 text-[11px] font-bold">
               <i class="inline-block w-1.5 h-1.5 rounded-full" :class="f[2]"></i><span x-text="f[1]"></span>
@@ -206,6 +249,7 @@ button:active{transform:scale(.94)}
                   <div class="flex items-center justify-between text-[11px] opacity-70">
                     <span x-text="i.lastOpened?'แกะ '+ago(i.lastOpened):'ยังไม่เคยแกะ'"></span>
                     <span x-show="Number(i.min)>0">เตือน ≤ <strong x-text="i.min"></strong></span>
+                    <button type="button" x-show="!(Number(i.min)>0) && usage(i)" @click.stop="applyMin(i)" class="underline font-bold" :class="ui.accentText">💡 ตั้งเตือน ≤ <span x-text="usage(i)?.min"></span></button>
                   </div>
                 </div>
               </div>
@@ -224,6 +268,7 @@ button:active{transform:scale(.94)}
         </div>
       </div>
     </template>
+    </div>
   </section>
 
   <!-- SHOPPING -->
@@ -254,7 +299,7 @@ button:active{transform:scale(.94)}
       </div>
     </div>
 
-    <div x-show="!shopList.length" class="rounded-3xl border p-12 text-center space-y-2" :class="ui.card">
+    <div x-show="loaded&&!shopList.length" class="rounded-3xl border p-12 text-center space-y-2" :class="ui.card">
       <p class="text-4xl">🎉</p>
       <p class="font-bold text-sm">ของใช้ในบ้านยังครบดีอยู่!</p>
       <p class="text-xs opacity-70">เมื่อของชิ้นไหนลดถึงจุดขั้นต่ำ หมด หรือใกล้หมดอายุ ระบบจะดึงมาที่นี่ให้อัตโนมัติ</p>
@@ -451,6 +496,12 @@ button:active{transform:scale(.94)}
           </label>
         </div>
 
+        <div x-show="f.id && usage(f) && usage(f).min !== (Number(f.min)||0)" class="rounded-2xl border px-3 py-2.5 text-xs flex items-center gap-2.5" :class="ui.softBtn">
+          <span class="text-base">💡</span>
+          <span class="flex-1">จากที่แกะของชิ้นนี้ราว <b x-text="Math.round((usage(f)?.perWeek||0)*10)/10"></b> ชิ้น/สัปดาห์ แนะนำให้เตือนเมื่อเหลือ ≤ <b x-text="usage(f)?.min"></b> (พอใช้ราว 7 วัน)</span>
+          <button type="button" @click="f.min=usage(f).min" class="shrink-0 px-3 py-1.5 rounded-full font-bold" :class="ui.primary">ใช้ค่านี้</button>
+        </div>
+
         <div class="rounded-2xl p-2.5 border flex items-center justify-between text-xs" :class="ui.softBtn">
           <span>สถานะอัตโนมัติ:</span>
           <span class="px-2.5 py-1 rounded-full font-bold" :class="stateMeta(f).badge" x-text="stateMeta(f).label"></span>
@@ -595,11 +646,11 @@ const DEFAULT_CATS = [
 ];
 
 const HERO = {
-  pink:'bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white',
-  blue:'bg-gradient-to-br from-sky-500 to-blue-600 text-white',
-  emerald:'bg-gradient-to-br from-emerald-500 to-teal-600 text-white',
-  violet:'bg-gradient-to-br from-violet-500 to-purple-600 text-white',
-  dark:'bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700 text-zinc-100'
+  pink:{box:'bg-gradient-to-br from-pink-50 to-fuchsia-50 border-pink-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-pink-700 ring-2 ring-pink-300 shadow-sm'},
+  blue:{box:'bg-gradient-to-br from-sky-50 to-blue-50 border-sky-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-blue-700 ring-2 ring-blue-300 shadow-sm'},
+  emerald:{box:'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-emerald-700 ring-2 ring-emerald-300 shadow-sm'},
+  violet:{box:'bg-gradient-to-br from-violet-50 to-purple-50 border-violet-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-violet-700 ring-2 ring-violet-300 shadow-sm'},
+  dark:{box:'bg-zinc-900 border-zinc-800 text-zinc-100', badge:'bg-zinc-800', track:'bg-zinc-800', off:'bg-zinc-800 text-zinc-300', on:'bg-zinc-100 text-zinc-900 ring-2 ring-pink-400'}
 };
 const THEMES = {
   pink: {
@@ -681,7 +732,7 @@ Alpine.data('app', () => ({
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
-  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false,
+  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false,
   setup:{code:'', cfg:'', err:''},
   themes:[
     {k:'pink', n:'ชมพูหวาน', dot:'bg-pink-400'},
@@ -751,6 +802,9 @@ Alpine.data('app', () => ({
     this.setup.cfg = this.cfg ? JSON.stringify(this.cfg, null, 1) : '';
     if(!this.code || !this.cfg) return;
     this.items = L('cache_' + this.code) || {};
+    this.loaded = L('cache_' + this.code) !== null;
+    this.showTips = localStorage.getItem('stocky_tips') !== '1' && Object.keys(this.items).length <= 3;
+    setTimeout(() => { this.loaded = true; }, 6000);
     this.customCats = L('cats_' + this.code) || null;
     this.ready = true;
     try{
@@ -758,8 +812,9 @@ Alpine.data('app', () => ({
       onValue(ref(db, '.info/connected'), s => this.online = !!s.val());
       onValue(ref(db, this.base() + 'items'), s => {
         this.items = s.val() || {};
+        this.loaded = true;
         S('cache_' + this.code, JSON.stringify(this.items));
-      }, e => this.flash('อ่านข้อมูลไม่ได้: ' + e.code));
+      }, e => { this.loaded = true; this.flash('อ่านข้อมูลไม่ได้: ' + e.code); });
       onValue(ref(db, this.base() + 'cats'), s => {
         const val = s.val();
         if(Array.isArray(val) && val.length){
@@ -901,6 +956,22 @@ Alpine.data('app', () => ({
       .filter(i => this.onList(i))
       .sort((a, b) => !!a.inCart - !!b.inCart || (a.name || '').localeCompare(b.name || '', 'th'));
   },
+  // วิเคราะห์ความถี่การแกะจากบันทึก log แล้วแนะนำจุดเตือน (พอใช้ ~7 วัน)
+  usage(i){
+    const ts = Object.keys(i?.log || {}).map(Number).filter(Boolean).sort((a, b) => a - b);
+    if(ts.length < 4) return null;
+    const span = (ts[ts.length - 1] - ts[0]) / 864e5;
+    if(span < 3 || (Date.now() - ts[ts.length - 1]) / 864e5 > 90) return null;
+    const perDay = (ts.length - 1) / span;
+    return {perWeek: perDay * 7, min: Math.max(1, Math.min(99, Math.ceil(perDay * 7)))};
+  },
+  applyMin(i){
+    const u = this.usage(i);
+    if(!u) return;
+    this.save(i.id, {min: u.min});
+    this.flash('ตั้งเตือนเมื่อเหลือ ≤ ' + u.min + ' แล้ว 💡');
+  },
+  dismissTips(){ S('stocky_tips', '1'); this.showTips = false; },
   get expSoon(){ return this.list.filter(i => this.expMeta(i)?.urgent).length; },
   pct(k){ const n = this.list.length; return n ? this.countByState(k) / n * 100 : 0; },
   level(i){ const q = Math.max(0, Number(i.qty) || 0), m = Number(i.min) || 0; return Math.round(Math.min(1, q / Math.max(m * 2, q, 1)) * 100); },
@@ -949,7 +1020,11 @@ Alpine.data('app', () => ({
     const cur = Number(i.qty) || 0;
     if(cur <= 0) return;
     const q = cur - 1;
-    const patch = {qty: increment(-1), lastOpened: Date.now(), snoozed: false};
+    const now = Date.now();
+    const patch = {qty: increment(-1), lastOpened: now, snoozed: false};
+    patch['log/' + now] = 1;
+    const old = Object.keys(i.log || {}).sort();
+    old.slice(0, Math.max(0, old.length - 19)).forEach(k => { patch['log/' + k] = null; });
     if(q === 0 || (Number(i.min) > 0 && q <= Number(i.min))) patch.onList = true;
     this.save(i.id, patch);
   },
