@@ -81,17 +81,14 @@ button:active{transform:scale(.94)}
 <div class="pb-32">
   <!-- HEADER -->
   <header class="sticky top-0 z-20 backdrop-blur border-b px-4 py-2.5 flex items-center justify-between" :class="ui.header" :style="'background-color:'+ui.headerBg+';padding-top:calc(.625rem + env(safe-area-inset-top))'">
-    <div class="flex items-center gap-2">
-      <img src="icon-180.png" alt="Stocky" class="w-7 h-7 rounded-xl object-cover">
-      <span class="font-extrabold text-lg tracking-tight" :class="ui.accentText">Stocky</span>
-      <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold" :class="ui.pill" x-text="{inv:'MyStock',shop:'ต้องซื้อเพิ่ม',set:'ตั้งค่า'}[tab]"></span>
+    <img src="icon-180.png" alt="Stocky" class="w-8 h-8 rounded-xl object-cover">
+    <div class="absolute inset-x-0 bottom-0 flex items-center justify-center px-24 pointer-events-none" style="top:env(safe-area-inset-top)">
+      <h1 class="font-extrabold text-base tracking-tight truncate" :class="ui.accentText" x-text="houseName||'Stocky'"></h1>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium border" :class="ui.softBtn">
-        <i class="w-2 h-2 rounded-full" :class="online?'bg-emerald-500 animate-pulse':'bg-slate-400'"></i>
-        <span x-text="online?(pending?'กำลังซิงก์…':'ซิงก์แล้ว'):(pending?('ออฟไลน์ ('+pending+' รอส่ง)'):'ออฟไลน์')"></span>
-      </span>
-    </div>
+    <span class="text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium border" :class="ui.softBtn" role="status">
+      <i class="w-2 h-2 rounded-full" :class="online?'bg-emerald-500 animate-pulse':'bg-slate-400'"></i>
+      <span :class="(!online||pending)?'':'hidden sm:inline'" x-text="online?(pending?'ซิงก์…':'ซิงก์แล้ว'):(pending?('รอส่ง '+pending):'ออฟไลน์')"></span>
+    </span>
   </header>
 
   <!-- MyStock -->
@@ -158,7 +155,7 @@ button:active{transform:scale(.94)}
 
       <div class="mt-3 grid grid-cols-4 gap-1.5">
         <template x-for="f in [['all','ทั้งหมด','bg-slate-400'],['ok','มีของ','bg-emerald-500'],['low','ใกล้หมด','bg-amber-400'],['out','หมดแล้ว','bg-rose-500']]" :key="f[0]">
-          <button type="button" @click="st=f[0]" class="rounded-2xl py-2 px-1 text-center" :class="st===f[0]?ui.hero.on:ui.hero.off">
+          <button type="button" @click="st=(st===f[0]&&f[0]!=='all')?'all':f[0]" class="rounded-2xl py-2 px-1 text-center" :class="st===f[0]?ui.hero.on:ui.hero.off">
             <span class="block text-lg font-extrabold leading-none" x-text="f[0]==='all'?list.length:countByState(f[0])"></span>
             <span class="mt-1 flex items-center justify-center gap-1 text-[11px] font-bold">
               <i class="inline-block w-1.5 h-1.5 rounded-full" :class="f[2]"></i><span x-text="f[1]"></span>
@@ -182,11 +179,17 @@ button:active{transform:scale(.94)}
         <input x-model="q" type="search" placeholder="ค้นหาชื่อ หมายเหตุ หรือบาร์โค้ด" class="w-full rounded-full border pl-10 pr-9 py-2.5 text-sm outline-none shadow-xs" :class="ui.input">
         <button type="button" x-show="q" @click="q=''" aria-label="ล้างคำค้นหา" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-70 text-xs px-1">✕</button>
       </div>
-      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <span class="text-[11px] font-semibold opacity-70 shrink-0">เรียง</span>
-        <template x-for="o in [['name','ชื่อ ก-ฮ'],['stock','ใกล้หมดก่อน'],['exp','หมดอายุก่อน']]" :key="o[0]">
-          <button type="button" @click="sortBy=o[0]" class="shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold" :class="sortBy===o[0]?ui.chipActive:ui.chip" x-text="o[1]"></button>
-        </template>
+      <div class="flex items-center justify-between gap-2 text-[11px]">
+        <span class="font-semibold opacity-80 min-w-0">
+          <span x-text="'แสดง '+filtered.length+' จาก '+list.length"></span>
+          <button type="button" x-show="q||st!=='all'||cat!=='all'" @click="q='';st='all';cat='all'" class="ml-1.5 underline font-bold" :class="ui.accentText">ล้างตัวกรอง</button>
+        </span>
+        <div class="flex items-center gap-0.5 rounded-full border p-0.5 shrink-0" :class="ui.softBtn" role="group" aria-label="เรียงลำดับ">
+          <span class="pl-2 pr-1 opacity-70">เรียง</span>
+          <template x-for="o in [['name','ก-ฮ'],['stock','สต็อกน้อย'],['exp','หมดอายุ']]" :key="o[0]">
+            <button type="button" @click="sortBy=o[0]" class="px-2.5 py-1 rounded-full font-semibold" :class="sortBy===o[0]?ui.chipActive:''" x-text="o[1]"></button>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -223,7 +226,7 @@ button:active{transform:scale(.94)}
             <div class="rounded-3xl border p-3 flex flex-col gap-2.5 shadow-sm relative overflow-hidden" :class="ui.card">
               <div class="absolute left-0 inset-y-0 w-1.5" :class="stateMeta(i).bar"></div>
 
-              <div class="flex gap-3 items-center cursor-pointer pl-1.5" @click="edit(i)">
+              <div class="flex gap-3 items-center cursor-pointer pl-1.5" role="button" tabindex="0" @click="openDetail(i)" @keydown.enter="openDetail(i)">
                 <div class="w-[72px] h-[72px] shrink-0 rounded-2xl flex items-center justify-center text-3xl overflow-hidden border" :class="ui.thumb">
                   <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
                   <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
@@ -273,70 +276,81 @@ button:active{transform:scale(.94)}
 
   <!-- SHOPPING -->
   <section x-show="tab==='shop'" class="p-3 space-y-3 max-w-2xl mx-auto">
-    <div class="rounded-3xl p-4 shadow-sm space-y-3" :class="ui.primary">
-      <div class="grid grid-cols-2 gap-2.5 text-center">
-        <div class="rounded-2xl bg-black/10 p-2.5">
-          <p class="text-xs opacity-90">งบรวมทั้งลิสต์</p>
-          <p class="text-2xl font-extrabold mt-0.5">฿<span x-text="fmt(total)"></span></p>
+    <!-- สรุปรายการซื้อ -->
+    <div class="rounded-3xl p-4 shadow-sm border space-y-3" :class="ui.hero.box">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold opacity-80">ต้องซื้อเพิ่ม</p>
+          <p class="mt-1 leading-none"><span class="text-4xl font-extrabold" x-text="shopList.length"></span><span class="text-sm font-bold opacity-80 ml-1.5">รายการ</span></p>
         </div>
-        <div class="rounded-2xl bg-black/10 p-2.5">
-          <p class="text-xs opacity-90">หยิบใส่ตะกร้าแล้ว</p>
-          <p class="text-2xl font-extrabold mt-0.5">฿<span x-text="fmt(totalChecked)"></span></p>
+        <div class="text-right rounded-2xl px-3 py-1.5" :class="ui.hero.badge">
+          <p class="text-[11px] font-semibold opacity-80">งบรวม</p>
+          <p class="text-lg font-extrabold leading-tight">฿<span x-text="fmt(total)"></span></p>
         </div>
       </div>
-
-      <div x-show="shopList.length" class="space-y-1.5">
-        <div class="flex items-center justify-between text-xs">
-          <span>ความคืบหน้า (<span x-text="checkedCount"></span>/<span x-text="shopList.length"></span> ชิ้น)</span>
-          <div class="flex gap-1.5">
-            <button type="button" @click="toggleAllCart(true)" class="px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25 font-medium">ติ๊กครบ</button>
-            <button type="button" @click="toggleAllCart(false)" class="px-2.5 py-1 rounded-lg bg-black/15 hover:bg-black/25 font-medium">ล้างติ๊ก</button>
+      <div x-show="shopList.length" class="space-y-2">
+        <div class="h-2.5 rounded-full overflow-hidden" :class="ui.hero.track" role="img" aria-label="ความคืบหน้าการหยิบของ">
+          <div class="h-full rounded-full bg-emerald-400 transition-all duration-300" :style="'width:'+(shopList.length?(checkedCount/shopList.length*100):0)+'%'"></div>
+        </div>
+        <div class="flex items-center justify-between gap-2 text-xs">
+          <span class="font-semibold">หยิบแล้ว <b x-text="checkedCount"></b>/<b x-text="shopList.length"></b> · ฿<span x-text="fmt(totalChecked)"></span></span>
+          <div class="flex gap-1.5 shrink-0">
+            <button type="button" @click="toggleAllCart(true)" class="px-3 py-1.5 rounded-full font-bold" :class="ui.hero.off">ติ๊กครบ</button>
+            <button type="button" @click="toggleAllCart(false)" class="px-3 py-1.5 rounded-full font-bold" :class="ui.hero.off">ล้างติ๊ก</button>
           </div>
         </div>
-        <div class="w-full h-2 rounded-full bg-black/15 overflow-hidden">
-          <div class="h-full bg-white rounded-full transition-all duration-300" :style="'width:'+(shopList.length?(checkedCount/shopList.length*100):0)+'%'"></div>
-        </div>
       </div>
     </div>
 
-    <div x-show="loaded&&!shopList.length" class="rounded-3xl border p-12 text-center space-y-2" :class="ui.card">
-      <p class="text-4xl">🎉</p>
-      <p class="font-bold text-sm">ของใช้ในบ้านยังครบดีอยู่!</p>
-      <p class="text-xs opacity-70">เมื่อของชิ้นไหนลดถึงจุดขั้นต่ำ หมด หรือใกล้หมดอายุ ระบบจะดึงมาที่นี่ให้อัตโนมัติ</p>
+    <div x-show="loaded&&!shopList.length" class="rounded-3xl border p-8 text-center space-y-2" :class="ui.card">
+      <img src="icon-180.png" alt="" class="w-20 h-20 mx-auto rounded-3xl shadow-sm">
+      <p class="font-extrabold text-sm">ของใช้ในบ้านยังครบดีอยู่! 🎉</p>
+      <p class="text-xs opacity-70">เมื่อของชิ้นไหนใกล้หมด หมด หรือใกล้หมดอายุ ระบบจะดึงมาไว้ที่นี่ให้เอง หรือเลือกเพิ่มเองด้านล่างก็ได้</p>
     </div>
 
-    <div class="space-y-2">
-      <template x-for="c in allCats" :key="c.k">
+    <!-- รายการแยกตามหมวด (แตะการ์ดเพื่อติ๊กว่าหยิบแล้ว) -->
+    <template x-for="c in allCats" :key="c.k">
       <div x-show="shopByCat(c.k).length" class="space-y-2">
-      <h2 class="font-bold text-xs flex items-center gap-1.5 pt-1 px-0.5"><span x-text="c.e"></span><span x-text="c.n"></span></h2>
-      <template x-for="i in shopByCat(c.k)" :key="i.id">
-        <div class="rounded-3xl border p-3 flex items-center gap-3 shadow-xs transition" :class="[ui.card, i.inCart&&'opacity-70']">
-          <input type="checkbox" :checked="!!i.inCart" @change="save(i.id,{inCart:$event.target.checked})" class="w-6 h-6 rounded-lg shrink-0 cursor-pointer" :class="ui.accentCheck">
-          <div class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
-            <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" alt=""></template>
-            <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-bold text-sm leading-snug break-words" :class="i.inCart&&'line-through'" x-text="i.name"></p>
-            <p x-show="i.note" class="text-[11px] opacity-70 mt-0.5 truncate" x-text="'📝 '+i.note"></p>
-            <p class="text-[11px] opacity-65 mt-0.5">
-              <span class="font-semibold" :class="Number(i.qty)<=0?'text-rose-500':'text-amber-500'" x-text="Number(i.qty)<=0?'หมดแล้ว':'เหลือ '+i.qty"></span>
-              · ฿<span x-text="fmt(i.price||0)"></span>/ชิ้น
-            </p>
-            <p x-show="expMeta(i)" class="text-[11px] font-semibold mt-0.5" :class="expMeta(i)?.urgent?'text-rose-500':'text-amber-600 dark:text-amber-400'" x-text="expMeta(i)?.label"></p>
-            <p class="text-xs font-bold mt-0.5" :class="ui.accentText">รวม ฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
-            <button type="button" @click="save(i.id,{snoozed:true})" class="text-[11px] underline opacity-70 mt-0.5">ข้ามไว้ก่อน</button>
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            <button type="button" @click="save(i.id,{buy:Math.max(1,(i.buy||1)-1)})" aria-label="ลดจำนวนที่จะซื้อ" class="w-9 h-9 rounded-xl border font-bold" :class="ui.stepBtn">−</button>
-            <span class="w-6 text-center font-extrabold text-sm" x-text="i.buy||1"></span>
-            <button type="button" @click="save(i.id,{buy:(i.buy||1)+1})" aria-label="เพิ่มจำนวนที่จะซื้อ" class="w-9 h-9 rounded-xl border font-bold" :class="ui.stepBtn">＋</button>
-          </div>
+        <div class="flex items-center justify-between pt-1 px-0.5">
+          <h2 class="font-extrabold text-sm flex items-center gap-2">
+            <span class="w-7 h-7 rounded-xl flex items-center justify-center text-sm border" :class="ui.thumb" x-text="c.e"></span>
+            <span x-text="c.n"></span>
+          </h2>
+          <span class="text-[11px] px-2.5 py-0.5 rounded-full font-bold" :class="ui.pill" x-text="shopByCat(c.k).length+' ชิ้น · ฿'+fmt(shopCatTotal(c.k))"></span>
         </div>
-      </template>
+
+        <template x-for="i in shopByCat(c.k)" :key="i.id">
+          <div class="rounded-3xl border p-3 flex items-center gap-3 shadow-sm relative overflow-hidden cursor-pointer transition" :class="[ui.card, i.inCart&&'opacity-60']" @click="save(i.id,{inCart:!i.inCart})">
+            <div class="absolute left-0 inset-y-0 w-1.5" :class="stateMeta(i).bar"></div>
+            <span class="ml-1.5 w-7 h-7 shrink-0 rounded-full border-2 flex items-center justify-center text-sm font-extrabold transition" role="checkbox" :aria-checked="!!i.inCart" :aria-label="'หยิบแล้ว '+i.name" :class="i.inCart?'bg-emerald-500 border-emerald-500 text-white':'border-slate-300 dark:border-zinc-600'" x-text="i.inCart?'✓':''"></span>
+
+            <div class="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center text-2xl overflow-hidden border" :class="ui.thumb">
+              <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
+              <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
+            </div>
+
+            <div class="flex-1 min-w-0 space-y-1">
+              <p class="font-bold text-sm leading-snug break-words line-clamp-2" :class="i.inCart&&'line-through'" x-text="i.name"></p>
+              <div class="flex flex-wrap gap-1">
+                <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="stateMeta(i).badge" x-text="Number(i.qty)<=0?'หมดแล้ว':'เหลือ '+i.qty"></span>
+                <span x-show="expMeta(i)" class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="expMeta(i)?.badge" x-text="expMeta(i)?.label"></span>
+              </div>
+              <p x-show="i.note" class="text-[11px] opacity-70 truncate" x-text="'📝 '+i.note"></p>
+              <button type="button" @click.stop="save(i.id,{snoozed:true})" class="text-[11px] underline opacity-70">ข้ามไว้ก่อน</button>
+            </div>
+
+            <div class="flex flex-col items-end gap-1.5 shrink-0" @click.stop>
+              <p class="text-sm font-extrabold" :class="ui.accentText">฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
+              <div class="flex items-center gap-1 rounded-full p-0.5 border" :class="ui.softBtn">
+                <button type="button" @click="save(i.id,{buy:Math.max(1,(i.buy||1)-1)})" aria-label="ลดจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
+                <span class="min-w-6 text-center font-extrabold text-sm" x-text="i.buy||1"></span>
+                <button type="button" @click="save(i.id,{buy:(i.buy||1)+1})" aria-label="เพิ่มจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
-      </template>
-    </div>
+    </template>
 
     <select @change="if($event.target.value){save($event.target.value,{onList:true,snoozed:false,buy:1});$event.target.value=''}" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
       <option value="">＋ เลือกของจากสต็อกมาใส่ลิสต์เพิ่มเอง…</option>
@@ -345,7 +359,7 @@ button:active{transform:scale(.94)}
       </template>
     </select>
 
-    <button type="button" @click="restock()" :disabled="!shopList.some(i=>i.inCart)" class="w-full py-4 rounded-2xl disabled:opacity-40 font-extrabold text-base shadow-sm" :class="ui.primary">🛍️ ยืนยันการซื้อ & เติมเข้าสต็อก</button>
+    <button type="button" @click="restock()" :disabled="!checkedCount" class="w-full py-4 rounded-2xl disabled:opacity-40 font-extrabold text-sm shadow-sm" :class="ui.primary" x-text="checkedCount?('🛍️ ซื้อแล้ว '+checkedCount+' รายการ (฿'+fmt(totalChecked)+') · เติมเข้าสต็อก'):'🛍️ ติ๊กของที่ซื้อแล้ว เพื่อเติมเข้าสต็อก'"></button>
   </section>
 
   <!-- SETTINGS -->
@@ -369,23 +383,36 @@ button:active{transform:scale(.94)}
       <div class="flex items-center justify-between">
         <div>
           <p class="font-bold text-base">🗂️ หมวดหมู่ของใช้</p>
-          <p class="text-xs opacity-65">เพิ่ม ลบ หรือเปลี่ยนอีโมจิหมวดได้เอง</p>
+          <p class="text-xs opacity-65">เพิ่ม ลบ เรียงลำดับ (▲▼) หรือเปลี่ยนอีโมจิได้เอง ลำดับนี้ใช้ทั้งหน้า MyStock และหน้าต้องซื้อ</p>
         </div>
         <button type="button" @click="openCatModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold" :class="ui.primary">＋ เพิ่มหมวด</button>
       </div>
       <div class="space-y-1.5">
-        <template x-for="c in allCats" :key="c.k">
-          <div class="flex items-center justify-between p-2.5 rounded-2xl border" :class="ui.softBtn">
-            <div class="flex items-center gap-2.5">
-              <span class="text-xl w-8 h-8 rounded-xl flex items-center justify-center border" :class="ui.card" x-text="c.e"></span>
-              <span class="font-semibold text-sm" x-text="c.n"></span>
+        <template x-for="(c, idx) in allCats" :key="c.k">
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl border" :class="ui.softBtn">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="text-xl w-8 h-8 shrink-0 rounded-xl flex items-center justify-center border" :class="ui.card" x-text="c.e"></span>
+              <span class="font-semibold text-sm truncate" x-text="c.n"></span>
             </div>
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" @click="moveCat(c,-1)" :disabled="idx===0" aria-label="เลื่อนขึ้น" class="w-8 h-8 rounded-xl border text-xs disabled:opacity-30" :class="ui.card">▲</button>
+              <button type="button" @click="moveCat(c,1)" :disabled="idx===allCats.length-1" aria-label="เลื่อนลง" class="w-8 h-8 rounded-xl border text-xs disabled:opacity-30" :class="ui.card">▼</button>
               <button type="button" @click="openCatModal(c)" class="px-2.5 py-1.5 rounded-xl text-xs border" :class="ui.card">แก้ไข</button>
               <button type="button" x-show="allCats.length > 1" @click="delCat(c)" class="px-2.5 py-1.5 rounded-xl text-xs border border-red-300 text-red-500">ลบ</button>
             </div>
           </div>
         </template>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border p-4 space-y-2.5 shadow-xs" :class="ui.card">
+      <div>
+        <p class="font-bold text-base">🏷️ ชื่อบ้าน</p>
+        <p class="text-xs opacity-65">แสดงตรงกลางแถบด้านบน คนในบ้านทุกคนเห็นชื่อเดียวกัน</p>
+      </div>
+      <div class="flex gap-2">
+        <input x-model="houseDraft" maxlength="24" placeholder="เช่น บ้านสุขใจ" class="flex-1 min-w-0 rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
+        <button type="button" @click="saveHouseName()" class="px-4 rounded-2xl font-bold text-xs shrink-0" :class="ui.primary">บันทึก</button>
       </div>
     </div>
 
@@ -443,6 +470,68 @@ button:active{transform:scale(.94)}
       <span x-show="shopList.length" class="absolute top-1 right-[25%] min-w-5 h-5 px-1 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center" x-text="shopList.length"></span></button>
     <button type="button" @click="tab='set'" class="py-2 text-xs font-semibold flex flex-col items-center gap-0.5" :class="tab==='set'?ui.navActive:'opacity-70'"><span class="text-base">⚙️</span><span>ตั้งค่า</span></button>
   </nav>
+
+  <!-- รายละเอียดสินค้า (อ่านอย่างเดียว กดแก้ไขเมื่ออยากแก้) -->
+  <div x-show="!!detail" class="fixed inset-0 z-40 bg-black/60 flex items-end justify-center" @click.self="detail=null">
+    <template x-if="detailItem">
+      <div class="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-t-3xl border-t p-4 space-y-3 pb-safe" :class="ui.modal">
+        <div class="flex items-start gap-3">
+          <div class="w-24 h-24 shrink-0 rounded-3xl flex items-center justify-center text-5xl overflow-hidden border" :class="ui.thumb">
+            <template x-if="detailItem.img"><img :src="detailItem.img" class="w-full h-full object-cover" alt=""></template>
+            <template x-if="!detailItem.img"><span x-text="catOf(detailItem.cat).e"></span></template>
+          </div>
+          <div class="min-w-0 flex-1 space-y-1.5">
+            <p class="text-[11px] font-bold opacity-70" x-text="catOf(detailItem.cat).e+' '+catOf(detailItem.cat).n"></p>
+            <h2 class="text-lg font-extrabold leading-snug break-words" x-text="detailItem.name"></h2>
+            <div class="flex flex-wrap gap-1">
+              <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="stateMeta(detailItem).badge" x-text="stateMeta(detailItem).label"></span>
+              <span x-show="expMeta(detailItem)" class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="expMeta(detailItem)?.badge" x-text="expMeta(detailItem)?.label"></span>
+            </div>
+          </div>
+          <button type="button" @click="detail=null" aria-label="ปิด" class="w-8 h-8 rounded-full shrink-0 text-sm" :class="ui.softBtn">✕</button>
+        </div>
+
+        <div class="rounded-2xl border p-3 space-y-2.5" :class="ui.card">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold opacity-70">คงเหลือ</span>
+            <div class="flex items-center gap-1 rounded-full p-0.5 border" :class="ui.softBtn">
+              <button type="button" @click="dec(detailItem)" aria-label="ลดจำนวน" class="w-9 h-9 rounded-full text-lg font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
+              <span class="min-w-10 text-center text-xl font-extrabold" x-text="Number(detailItem.qty)||0"></span>
+              <button type="button" @click="inc(detailItem)" aria-label="เพิ่มจำนวน" class="w-9 h-9 rounded-full text-lg font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
+            </div>
+          </div>
+          <div class="h-1.5 rounded-full bg-slate-200/80 dark:bg-zinc-700/80 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-500" :class="stateMeta(detailItem).bar" :style="'width:'+level(detailItem)+'%'"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <template x-for="r in detailRows(detailItem)" :key="r[0]">
+            <div class="rounded-2xl border px-3 py-2" :class="ui.card">
+              <p class="text-[11px] opacity-70 font-semibold" x-text="r[0]"></p>
+              <p class="text-sm font-bold break-words" x-text="r[1]"></p>
+            </div>
+          </template>
+        </div>
+
+        <div x-show="detailItem.note" class="rounded-2xl border px-3 py-2.5 text-sm" :class="ui.card">
+          <p class="text-[11px] opacity-70 font-semibold mb-0.5">📝 หมายเหตุ</p>
+          <p class="break-words whitespace-pre-line" x-text="detailItem.note"></p>
+        </div>
+
+        <div x-show="usage(detailItem)" class="rounded-2xl border px-3 py-2.5 text-xs flex items-center gap-2.5" :class="ui.softBtn">
+          <span class="text-base">💡</span>
+          <span class="flex-1">ใช้ราว <b x-text="Math.round((usage(detailItem)?.perWeek||0)*10)/10"></b> ชิ้น/สัปดาห์ แนะนำเตือนเมื่อเหลือ ≤ <b x-text="usage(detailItem)?.min"></b></span>
+          <button type="button" x-show="usage(detailItem)?.min !== (Number(detailItem.min)||0)" @click="applyMin(detailItem)" class="shrink-0 px-3 py-1.5 rounded-full font-bold" :class="ui.primary">ใช้ค่านี้</button>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button type="button" @click="save(detailItem.id,{onList:!onList(detailItem),snoozed:onList(detailItem),buy:detailItem.buy||1})" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="onList(detailItem)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(detailItem)?'🛒 เอาออกจากลิสต์':'＋ ใส่ลิสต์ซื้อ'"></button>
+          <button type="button" @click="editFromDetail()" class="flex-[2] py-3.5 rounded-2xl font-extrabold shadow-sm" :class="ui.primary">✏️ แก้ไข</button>
+        </div>
+      </div>
+    </template>
+  </div>
 
   <!-- Modal เพิ่ม/แก้ไขสินค้า -->
   <div x-show="!!f" class="fixed inset-0 z-40 bg-black/60 flex items-end justify-center" @click.self="closeForm()">
@@ -519,7 +608,7 @@ button:active{transform:scale(.94)}
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-          <label class="font-semibold">วันหมดอายุ (ถ้ามี)
+          <label class="font-semibold">วันหมดอายุ (ชิ้นที่หมดก่อน)
             <input x-model="f.exp" type="date" class="mt-1 w-full rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
           </label>
           <label class="font-semibold">หมายเหตุ
@@ -743,7 +832,7 @@ Alpine.data('app', () => ({
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
-  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false, lookup:{busy:false, src:'', miss:false, detail:''},
+  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false, detail:null, houseName:'', houseDraft:'', lookup:{busy:false, src:'', miss:false, detail:''},
   setup:{code:'', cfg:'', err:''},
   themes:[
     {k:'pink', n:'ชมพูหวาน', dot:'bg-pink-400'},
@@ -790,7 +879,7 @@ Alpine.data('app', () => ({
     ['gesturestart','gesturechange','gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), {passive:false}));
     window.addEventListener('stocky-update', () => { this.updateReady = true; });
     // ปุ่ม Back ของมือถือ: ปิด modal ชั้นบนสุดแทนการออกจากแอป
-    const anyOpen = () => !!(this.f || this.catForm || this.scan || this.hit);
+    const anyOpen = () => !!(this.f || this.catForm || this.scan || this.hit || this.detail);
     this.$watch(anyOpen, open => {
       clearTimeout(this._ovT);
       if(open){
@@ -807,6 +896,7 @@ Alpine.data('app', () => ({
       else if(this.scan) this.closeScan();
       else if(this.catForm) this.catForm = null;
       else if(this.f) this.f = null;
+      else if(this.detail) this.detail = null;
       if(anyOpen()) history.pushState({ov:1}, ''); else this._ov = false;
     });
     this.setup.code = this.code;
@@ -817,6 +907,8 @@ Alpine.data('app', () => ({
     this.showTips = localStorage.getItem('stocky_tips') !== '1' && Object.keys(this.items).length <= 3;
     setTimeout(() => { this.loaded = true; }, 6000);
     this.customCats = L('cats_' + this.code) || null;
+    this.houseName = localStorage.getItem('house_' + this.code) || '';
+    this.houseDraft = this.houseName;
     this.ready = true;
     try{
       db = getDatabase(initializeApp(this.cfg));
@@ -826,6 +918,12 @@ Alpine.data('app', () => ({
         this.loaded = true;
         S('cache_' + this.code, JSON.stringify(this.items));
       }, e => { this.loaded = true; this.flash('อ่านข้อมูลไม่ได้: ' + e.code); });
+      onValue(ref(db, this.base() + 'meta/name'), s => {
+        const v = s.val();
+        this.houseName = typeof v === 'string' ? v : '';
+        this.houseDraft = this.houseName;
+        S('house_' + this.code, this.houseName);
+      });
       onValue(ref(db, this.base() + 'cats'), s => {
         const val = s.val();
         if(Array.isArray(val) && val.length){
@@ -952,6 +1050,21 @@ Alpine.data('app', () => ({
   byCat(k){
     return this.filtered.filter(i => this.resolveCatKey(i.cat) === k);
   },
+  get detailItem(){ return this.detail && this.items[this.detail] ? {id: this.detail, ...this.items[this.detail]} : null; },
+  openDetail(i){ this.detail = i.id; },
+  editFromDetail(){ const i = this.detailItem; if(!i) return; this.detail = null; this.edit(i); },
+  thDate(v){ const d = new Date(v + 'T00:00:00'); return isNaN(d) ? v : d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'numeric'}); },
+  detailRows(i){
+    const m = Number(i.min) || 0, e = this.expMeta(i);
+    return [
+      ['เตือนเมื่อเหลือ', m > 0 ? '≤ ' + m : 'ไม่ได้ตั้ง'],
+      ['ราคา', Number(i.price) > 0 ? '฿' + this.fmt(i.price) : '—'],
+      ['วันหมดอายุ', i.exp ? this.thDate(i.exp) + (e ? ' (' + e.label.replace(/^EXP /, '') + ')' : '') : '—'],
+      ['แกะล่าสุด', i.lastOpened ? this.ago(i.lastOpened) : 'ยังไม่เคยแกะ'],
+      ['บาร์โค้ด', i.barcode || '—'],
+      ['ลิสต์ซื้อ', this.onList(i) ? 'อยู่ในลิสต์ (ซื้อ ' + (i.buy || 1) + ')' : 'ไม่อยู่ในลิสต์']
+    ];
+  },
   catOf(k){
     return this.allCats.find(c => c.k === k) || this.allCats[0] || {k:'', n:'', e:'📦'};
   },
@@ -986,13 +1099,30 @@ Alpine.data('app', () => ({
   get expSoon(){ return this.list.filter(i => this.expMeta(i)?.urgent).length; },
   pct(k){ const n = this.list.length; return n ? this.countByState(k) / n * 100 : 0; },
   level(i){ const q = Math.max(0, Number(i.qty) || 0), m = Number(i.min) || 0; return Math.round(Math.min(1, q / Math.max(m * 2, q, 1)) * 100); },
-  shopByCat(k){ return this.shopList.filter(i => this.resolveCatKey(i.cat) === k); },
+  shopByCat(k){ return this.shopList.filter(i => this.resolveCatKey(i.cat) === k).sort((a, b) => (!!a.inCart) - (!!b.inCart)); },
+  shopCatTotal(k){ return this.shopByCat(k).reduce((t, i) => t + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
   get checkedCount(){ return this.shopList.filter(i => i.inCart).length; },
   get total(){ return this.shopList.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
   get totalChecked(){ return this.shopList.filter(i => i.inCart).reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
   fmt(n){ return Number(n || 0).toLocaleString('th-TH', {maximumFractionDigits: 2}); },
   ago(t){ const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'วันนี้' : d + ' วันก่อน'; },
 
+  saveHouseName(){
+    const n = String(this.houseDraft || '').trim().slice(0, 24);
+    this.houseName = n; this.houseDraft = n;
+    S('house_' + this.code, n);
+    set(ref(db, this.base() + 'meta/name'), n || null).catch(() => {});
+    this.flash(n ? 'ตั้งชื่อบ้านแล้ว 🏠' : 'ล้างชื่อบ้านแล้ว');
+  },
+  moveCat(c, dir){
+    const next = [...this.allCats];
+    const i = next.findIndex(x => x.k === c.k), j = i + dir;
+    if(i < 0 || j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    this.customCats = next;
+    S('cats_' + this.code, JSON.stringify(next));
+    set(ref(db, this.base() + 'cats'), next).catch(() => {});
+  },
   openCatModal(c = null){
     this.catForm = c ? {k: c.k, n: c.n, e: c.e, isEdit: true} : {k: 'cat_' + Date.now(), n: '', e: '✨', isEdit: false};
   },
@@ -1098,7 +1228,8 @@ Alpine.data('app', () => ({
       up[p + 'qty'] = Math.max(0, Number(i.qty) || 0) + (Number(i.buy) || 1);
       up[p + 'onList'] = false;
       up[p + 'snoozed'] = false;
-      if(this.expMeta(i)?.urgent){ up[p + 'exp'] = ''; cleared++; }
+      // ล้างวันหมดอายุเมื่อชิ้นเก่าหมดแล้ว หรือเลยกำหนด เพื่อให้ใส่วันของล็อตใหม่
+      if(i.exp && (this.expMeta(i)?.urgent || (Number(i.qty) || 0) <= 0)){ up[p + 'exp'] = ''; cleared++; }
       up[p + 'inCart'] = false;
       up[p + 'buy'] = 1;
     });
