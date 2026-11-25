@@ -271,6 +271,28 @@ button:active{transform:scale(.94)}
         </div>
       </div>
     </template>
+
+    <!-- เลิกใช้แล้ว -->
+    <div x-show="retiredList.length" class="pt-2">
+      <button type="button" @click="showRetired=!showRetired" class="w-full py-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-1.5 opacity-80" :class="ui.softBtn">
+        <span>📦 เลิกใช้แล้ว (<span x-text="retiredList.length"></span>)</span>
+        <span x-text="showRetired?'▲':'▼'"></span>
+      </button>
+      <div x-show="showRetired" x-transition class="mt-2 space-y-2">
+        <template x-for="i in retiredList" :key="i.id">
+          <div class="rounded-2xl border p-2.5 flex items-center gap-3 opacity-80" :class="ui.card">
+            <button type="button" @click="openDetail(i)" class="flex items-center gap-3 min-w-0 flex-1 text-left">
+              <div class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-lg overflow-hidden border" :class="ui.thumb">
+                <template x-if="i.img"><img :src="i.img" class="w-full h-full object-cover" loading="lazy" alt=""></template>
+                <template x-if="!i.img"><span x-text="catOf(i.cat).e"></span></template>
+              </div>
+              <span class="font-semibold text-sm truncate" x-text="i.name"></span>
+            </button>
+            <button type="button" @click="unretire(i)" class="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border" :class="ui.softBtn">↩️ กลับมาใช้</button>
+          </div>
+        </template>
+      </div>
+    </div>
     </div>
   </section>
 
@@ -336,7 +358,10 @@ button:active{transform:scale(.94)}
                 <span x-show="expMeta(i)" class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="expMeta(i)?.badge" x-text="expMeta(i)?.label"></span>
               </div>
               <p x-show="i.note" class="text-[11px] opacity-70 truncate" x-text="'📝 '+i.note"></p>
-              <button type="button" @click.stop="save(i.id,{snoozed:true})" class="text-[11px] underline opacity-70">ข้ามไว้ก่อน</button>
+              <div class="flex gap-3">
+                <button type="button" @click.stop="save(i.id,{snoozed:true})" class="text-[11px] underline opacity-70">ข้ามไว้ก่อน</button>
+                <button type="button" @click.stop="retire(i)" class="text-[11px] underline opacity-70">🚫 ไม่ซื้อซ้ำ</button>
+              </div>
             </div>
 
             <div class="flex flex-col items-end gap-1.5 shrink-0" @click.stop>
@@ -526,9 +551,11 @@ button:active{transform:scale(.94)}
         </div>
 
         <div class="flex gap-2 pt-1">
-          <button type="button" @click="save(detailItem.id,{onList:!onList(detailItem),snoozed:onList(detailItem),buy:detailItem.buy||1})" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="onList(detailItem)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(detailItem)?'🛒 เอาออกจากลิสต์':'＋ ใส่ลิสต์ซื้อ'"></button>
+          <button type="button" x-show="detailItem.retired" @click="unretire(detailItem);detail=null" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="ui.softBtn">↩️ กลับมาใช้อีก</button>
+          <button type="button" x-show="!detailItem.retired" @click="save(detailItem.id,{onList:!onList(detailItem),snoozed:onList(detailItem),buy:detailItem.buy||1})" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="onList(detailItem)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(detailItem)?'🛒 เอาออกจากลิสต์':'＋ ใส่ลิสต์ซื้อ'"></button>
           <button type="button" @click="editFromDetail()" class="flex-[2] py-3.5 rounded-2xl font-extrabold shadow-sm" :class="ui.primary">✏️ แก้ไข</button>
         </div>
+        <button type="button" x-show="!detailItem.retired" @click="retire(detailItem);detail=null" class="w-full py-2 text-xs font-semibold underline opacity-70">🚫 ไม่ซื้อซ้ำแล้ว (เลิกใช้)</button>
       </div>
     </template>
   </div>
@@ -542,7 +569,27 @@ button:active{transform:scale(.94)}
           <button type="button" @click="closeForm()" aria-label="ปิด" class="w-8 h-8 rounded-full flex items-center justify-center opacity-70">✕</button>
         </div>
 
-        <input x-model="f.name" placeholder="ชื่อสินค้า เช่น สบู่เหลว, โฟมล้างหน้า *" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+        <input x-model="f.name" placeholder="ชื่อสินค้า เช่น สบู่เหลว, โฟมล้างหน้า *" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input" autocomplete="off">
+
+        <!-- ของที่มีอยู่แล้ว (ช่วยพิมพ์ + กันเพิ่มซ้ำ) -->
+        <div x-show="nameHints.length" class="rounded-2xl border overflow-hidden" :class="ui.softBtn">
+          <p class="px-3 pt-2 text-[11px] font-bold" :class="nameExact?'text-amber-600 dark:text-amber-400':'opacity-80'" x-text="nameExact?'⚠️ มีรายการชื่อนี้อยู่แล้ว แตะเพื่อไปดูของเดิม':'มีของคล้ายกันอยู่แล้ว แตะเพื่อดูของเดิม'"></p>
+          <template x-for="h in nameHints" :key="h.id">
+            <div class="flex items-center gap-2 px-2 py-1">
+              <button type="button" @click="pickHint(h)" class="flex items-center gap-2.5 min-w-0 flex-1 text-left py-1">
+                <span class="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border text-base overflow-hidden" :class="ui.thumb">
+                  <template x-if="h.img"><img :src="h.img" class="w-full h-full object-cover" alt=""></template>
+                  <template x-if="!h.img"><span x-text="catOf(h.cat).e"></span></template>
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-sm font-bold truncate" x-text="h.name"></span>
+                  <span class="block text-[11px] opacity-70" x-text="h.retired?'🚫 เลิกใช้แล้ว':('เหลือ '+(Number(h.qty)||0))"></span>
+                </span>
+              </button>
+              <button type="button" @click="useHint(h)" class="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border" :class="ui.card">ใช้ชื่อนี้</button>
+            </div>
+          </template>
+        </div>
 
         <div class="flex gap-2">
           <select x-model="f.cat" class="flex-1 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
@@ -713,6 +760,7 @@ button:active{transform:scale(.94)}
     <span class="pointer-events-auto flex items-center gap-3 px-4 py-2 rounded-full bg-slate-900 text-white text-xs font-semibold shadow-md">
       <span x-text="toast"></span>
       <button type="button" x-show="undoData" @click="undo()" class="underline text-pink-300 font-extrabold">เลิกทำ</button>
+      <button type="button" x-show="toastAct" @click="runToastAct()" class="underline text-pink-300 font-extrabold" x-text="toastAct?.label"></button>
     </span>
   </div>
 
@@ -832,7 +880,7 @@ Alpine.data('app', () => ({
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
-  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false, detail:null, houseName:'', houseDraft:'', lookup:{busy:false, src:'', miss:false, detail:''},
+  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false, detail:null, toastAct:null, showRetired:false, houseName:'', houseDraft:'', lookup:{busy:false, src:'', miss:false, detail:''},
   setup:{code:'', cfg:'', err:''},
   themes:[
     {k:'pink', n:'ชมพูหวาน', dot:'bg-pink-400'},
@@ -937,10 +985,23 @@ Alpine.data('app', () => ({
   },
 
   base(){ return 'households/' + this.code + '/'; },
-  flash(m, ms = 2200, undo = null){
-    this.toast = m; this.undoData = undo;
+  flash(m, ms = 2200, undo = null, act = null){
+    this.toast = m; this.undoData = undo; this.toastAct = act;
     clearTimeout(this._t);
-    this._t = setTimeout(() => { this.toast = ''; this.undoData = null; }, ms);
+    this._t = setTimeout(() => { this.toast = ''; this.undoData = null; this.toastAct = null; }, ms);
+  },
+  runToastAct(){ const a = this.toastAct; this.toast = ''; this.toastAct = null; if(a) a.fn(); },
+  // เลิกใช้ / ไม่ซื้อซ้ำ: ซ่อนจากหน้าหลักและลิสต์ซื้อ แต่เก็บข้อมูลไว้
+  retire(i){
+    const cur = this.items[i.id];
+    if(!cur) return;
+    const data = {...cur};
+    this.save(i.id, {retired: true, onList: false, inCart: false, snoozed: false});
+    this.flash('เลิกใช้ "' + (cur.name || '') + '" แล้ว', 6000, {id: i.id, data});
+  },
+  unretire(i){
+    this.save(i.id, {retired: null});
+    this.flash('กลับมาใช้ "' + (i.name || '') + '" อีกครั้งแล้ว ↩️');
   },
   undo(){
     const u = this.undoData;
@@ -1019,7 +1080,9 @@ Alpine.data('app', () => ({
   },
   countByState(k){ return this.list.filter(i => this.getState(i) === k).length; },
 
-  get list(){ return Object.entries(this.items).map(([id, v]) => ({id, ...v})); },
+  get allList(){ return Object.entries(this.items).map(([id, v]) => ({id, ...v})); },
+  get list(){ return this.allList.filter(i => !i.retired); },
+  get retiredList(){ return this.allList.filter(i => i.retired).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'th')); },
   get filtered(){
     const q = this.q.trim().toLowerCase();
     const list = this.list.filter(i =>
@@ -1062,7 +1125,7 @@ Alpine.data('app', () => ({
       ['วันหมดอายุ', i.exp ? this.thDate(i.exp) + (e ? ' (' + e.label.replace(/^EXP /, '') + ')' : '') : '—'],
       ['แกะล่าสุด', i.lastOpened ? this.ago(i.lastOpened) : 'ยังไม่เคยแกะ'],
       ['บาร์โค้ด', i.barcode || '—'],
-      ['ลิสต์ซื้อ', this.onList(i) ? 'อยู่ในลิสต์ (ซื้อ ' + (i.buy || 1) + ')' : 'ไม่อยู่ในลิสต์']
+      i.retired ? ['สถานะ', '🚫 เลิกใช้แล้ว'] : ['ลิสต์ซื้อ', this.onList(i) ? 'อยู่ในลิสต์ (ซื้อ ' + (i.buy || 1) + ')' : 'ไม่อยู่ในลิสต์']
     ];
   },
   catOf(k){
@@ -1168,6 +1231,7 @@ Alpine.data('app', () => ({
     old.slice(0, Math.max(0, old.length - 19)).forEach(k => { patch['log/' + k] = null; });
     if(q === 0 || (Number(i.min) > 0 && q <= Number(i.min))) patch.onList = true;
     this.save(i.id, patch);
+    if(q === 0) this.flash('หมดแล้ว เข้าลิสต์ซื้อ 🛒', 5000, null, {label: 'ไม่ซื้อแล้ว', fn: () => this.retire(i)});
   },
   inc(i){
     const q = (Number(i.qty) || 0) + 1;
@@ -1176,6 +1240,20 @@ Alpine.data('app', () => ({
     if(q > min && !this.expMeta(i)?.urgent) patch.onList = false;
     this.save(i.id, patch);
   },
+  norm(v){ return String(v || '').toLowerCase().replace(/\s+/g, ''); },
+  // แนะนำจากของเดิมตอนพิมพ์ชื่อ (เฉพาะตอนเพิ่มใหม่) รวมของที่เลิกใช้แล้วด้วย
+  get nameHints(){
+    if(!this.f || this.f.id) return [];
+    const q = this.norm(this.f.name);
+    if(!q) return [];
+    const rank = i => { const n = this.norm(i.name); return n === q ? 0 : n.startsWith(q) ? 1 : n.includes(q) ? 2 : 3; };
+    return this.allList.map(i => ({i, r: rank(i)})).filter(x => x.r < 3)
+      .sort((a, b) => a.r - b.r || (!!a.i.retired - !!b.i.retired) || (a.i.name || '').localeCompare(b.i.name || '', 'th'))
+      .slice(0, 5).map(x => x.i);
+  },
+  get nameExact(){ const h = this.nameHints[0]; return !!h && this.norm(h.name) === this.norm(this.f?.name); },
+  pickHint(h){ this.f = null; this.detail = h.id; },
+  useHint(h){ if(!this.f) return; this.f.name = h.name; this.f.cat = this.resolveCatKey(h.cat); },
   add(pre = {}){
     const defaultCat = this.cat !== 'all' ? this.cat : (this.allCats[0]?.k || '');
     this.lookup = {busy:false, src:'', miss:false, detail:''};
@@ -1186,6 +1264,11 @@ Alpine.data('app', () => ({
   commit(){
     const f = this.f;
     if(!f || !f.name || !f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อนน้า');
+    if(!f.id){
+      const bc = String(f.barcode || '').trim();
+      const dup = this.allList.find(i => this.norm(i.name) === this.norm(f.name)) || (bc && this.allList.find(i => String(i.barcode || '').trim() === bc));
+      if(dup && !confirm('มี "' + dup.name + '"' + (dup.retired ? ' (เลิกใช้แล้ว)' : '') + ' อยู่ในรายการแล้ว ต้องการเพิ่มซ้ำจริงไหม?')) return;
+    }
     const qty = Number(f.qty) || 0;
     const min = Number(f.min) || 0;
     const exp = String(f.exp || '').trim();
@@ -1439,8 +1522,13 @@ Alpine.data('app', () => ({
       this.lookupInto(code);
       return;
     }
-    const found = this.list.find(i => String(i.barcode || '').trim() === code);
-    if(found){
+    const found = this.allList.find(i => String(i.barcode || '').trim() === code);
+    if(found && found.retired){
+      this.$nextTick(() => {
+        if(confirm('"' + found.name + '" เลิกใช้ไปแล้ว ให้กลับมาใช้อีกครั้งไหม?')){ this.unretire(found); this.hit = found.id; }
+        this._handlingScan = false;
+      });
+    }else if(found){
       this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
     }else{
       this.flash('สินค้าใหม่ กำลังค้นหาข้อมูลให้…');
