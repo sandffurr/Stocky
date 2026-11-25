@@ -425,6 +425,7 @@ button:active{transform:scale(.94)}
           </div>
           <p class="text-[11px] opacity-70">Import จะเขียนทับข้อมูลสินค้าทั้งหมดในรหัสบ้านนี้</p>
         </div>
+        <p class="text-[11px] opacity-70 text-center px-4">ชื่อและรูปที่เติมให้อัตโนมัติเมื่อสแกนมาจาก Open Food Facts, Open Beauty Facts และ Open Products Facts (ODbL) เป็นข้อมูลจากอาสาสมัคร อาจไม่ถูกต้องทั้งหมด</p>
       </div>
     </div>
   </section>
@@ -466,6 +467,11 @@ button:active{transform:scale(.94)}
         <div class="flex gap-2">
           <input x-model="f.barcode" placeholder="เลขบาร์โค้ด (สแกนหรือพิมพ์)" inputmode="numeric" class="flex-1 min-w-0 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
           <button type="button" @click="openScan(true)" aria-label="สแกนบาร์โค้ดใส่ช่องนี้" class="px-4 rounded-2xl border text-lg" :class="ui.softBtn">📷</button>
+        </div>
+
+        <div x-show="lookup.busy||lookup.src||lookup.miss" class="text-[11px] font-semibold rounded-xl px-3 py-2 flex items-center gap-2" :class="ui.softBtn">
+          <span x-show="lookup.busy" class="inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
+          <span x-text="lookup.busy?'กำลังค้นหาข้อมูลสินค้า…':(lookup.src?('✨ เติมชื่อ/รูปจาก '+lookup.src+' กรุณาตรวจและแก้ไขได้'):'ไม่พบข้อมูลสินค้านี้ในฐานข้อมูลสาธารณะ กรอกเองได้เลย')"></span>
         </div>
 
         <div class="flex gap-3 items-center">
@@ -732,7 +738,7 @@ Alpine.data('app', () => ({
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
-  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false,
+  pending:0, undoData:null, updateReady:false, _f0:'', _ov:false, loaded:false, showTips:false, lookup:{busy:false, src:'', miss:false},
   setup:{code:'', cfg:'', err:''},
   themes:[
     {k:'pink', n:'ชมพูหวาน', dot:'bg-pink-400'},
@@ -1037,10 +1043,11 @@ Alpine.data('app', () => ({
   },
   add(pre = {}){
     const defaultCat = this.cat !== 'all' ? this.cat : (this.allCats[0]?.k || '');
+    this.lookup = {busy:false, src:'', miss:false};
     this.f = {name:'', cat:defaultCat, barcode:'', img:'', imgUrl:'', qty:1, min:1, price:0, exp:'', note:'', ...pre};
     this._f0 = JSON.stringify(this.f);
   },
-  edit(i){ this.f = {...i, cat: this.resolveCatKey(i.cat), exp: i.exp || '', note: i.note || '', imgUrl: /^https?:/.test(i.img || '') ? i.img : ''}; this._f0 = JSON.stringify(this.f); },
+  edit(i){ this.lookup = {busy:false, src:'', miss:false}; this.f = {...i, cat: this.resolveCatKey(i.cat), exp: i.exp || '', note: i.note || '', imgUrl: /^https?:/.test(i.img || '') ? i.img : ''}; this._f0 = JSON.stringify(this.f); },
   commit(){
     const f = this.f;
     if(!f || !f.name || !f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อนน้า');
@@ -1231,6 +1238,53 @@ Alpine.data('app', () => ({
     await this.stopScannerOnly();
   },
 
+  // ค้นชื่อ/รูปจาก Open Food Facts แล้วลองต่อที่ Beauty / Products / Pet Food Facts
+  async lookupProduct(code){
+    const FIELDS = 'code,product_name,product_name_th,generic_name,brands,quantity,image_front_small_url,image_front_url,image_url';
+    const SRC = [
+      ['https://world.openfoodfacts.org', 'Open Food Facts'],
+      ['https://world.openbeautyfacts.org', 'Open Beauty Facts'],
+      ['https://world.openproductsfacts.org', 'Open Products Facts'],
+      ['https://world.openpetfoodfacts.org', 'Open Pet Food Facts']
+    ];
+    const ask = async ([base, label]) => {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 4500);
+      try{
+        const res = await fetch(base + '/api/v2/product/' + encodeURIComponent(code) + '.json?fields=' + FIELDS, {signal: ctl.signal});
+        if(!res.ok) return null;
+        const d = await res.json();
+        return d && d.status === 1 && d.product ? {p: d.product, label} : null;
+      }catch{ return null; }
+      finally{ clearTimeout(t); }
+    };
+    let hit = await ask(SRC[0]);
+    if(!hit) hit = (await Promise.all(SRC.slice(1).map(ask))).find(Boolean) || null;
+    if(!hit) return null;
+    const p = hit.p;
+    let name = String(p.product_name_th || p.product_name || p.generic_name || '').trim();
+    const brand = String(p.brands || '').split(',')[0].trim();
+    const qty = String(p.quantity || '').trim();
+    if(brand && name && !name.toLowerCase().includes(brand.toLowerCase())) name = brand + ' ' + name;
+    else if(brand && !name) name = brand;
+    if(qty && name && !name.toLowerCase().includes(qty.toLowerCase())) name += ' ' + qty;
+    let img = p.image_front_small_url || p.image_front_url || p.image_url || '';
+    if(!/^https:\/\//.test(img)) img = '';
+    if(!name && !img) return null;
+    return {name: name.slice(0, 80), img, source: hit.label};
+  },
+  async lookupInto(code){
+    if(!/^\d{6,14}$/.test(code) || !this.f) return;
+    this.lookup = {busy:true, src:'', miss:false};
+    const r = await this.lookupProduct(code);
+    if(!this.f || String(this.f.barcode || '').trim() !== code){ this.lookup = {busy:false, src:'', miss:false}; return; }
+    if(!r){ this.lookup = {busy:false, src:'', miss:true}; return; }
+    let filled = false;
+    if(!String(this.f.name || '').trim() && r.name){ this.f.name = r.name; filled = true; }
+    if(!this.f.img && r.img){ this.f.img = r.img; this.f.imgUrl = r.img; filled = true; }
+    this.lookup = {busy:false, src: filled ? r.source : '', miss:false};
+  },
+
   async onScan(rawCode){
     if(this._handlingScan) return;
     this._handlingScan = true;
@@ -1242,15 +1296,17 @@ Alpine.data('app', () => ({
       this.f.barcode = code;
       this.flash('สแกนบาร์โค้ดแล้ว: ' + code);
       this._handlingScan = false;
+      this.lookupInto(code);
       return;
     }
     const found = this.list.find(i => String(i.barcode || '').trim() === code);
     if(found){
       this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
     }else{
-      this.flash('ไม่พบบาร์โค้ด ' + code + ' เพิ่มใหม่ได้เลย');
+      this.flash('สินค้าใหม่ กำลังค้นหาข้อมูลให้…');
       this.add({barcode: code});
       this._handlingScan = false;
+      this.lookupInto(code);
     }
   },
 

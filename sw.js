@@ -1,4 +1,4 @@
-const CACHE = 'stocky-v15';
+const CACHE = 'stocky-v16';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 // ไลบรารีจาก CDN: แคชไว้ตั้งแต่ติดตั้ง เพื่อให้เปิดออฟไลน์ได้ตั้งแต่ครั้งแรก
 // (ถ้า URL/เวอร์ชันไม่ตรงกับใน index.html จะไม่เสียหาย แค่ไม่ได้ precache)
@@ -23,6 +23,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const r = e.request, u = new URL(r.url);
   if (r.method !== 'GET' || u.hostname.endsWith('firebaseio.com') || u.hostname.endsWith('googleapis.com')) return;
+  // Open (Food|Beauty|Products|Pet Food) Facts: ไม่แคชผลค้นหา และไม่แคชรูป (กันโควต้าจาก opaque response)
+  if (/open(food|beauty|products|petfood)facts\.org$/.test(u.hostname)) return;
   // stale-while-revalidate: เปิดไว (จาก cache) แล้วอัปเดตเบื้องหลัง
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(r, {ignoreSearch: r.mode === 'navigate'});
