@@ -1,4 +1,4 @@
-const CACHE = 'stocky-v14';
+const CACHE = 'stocky-v15';
 const SHELL = ['./', './index.html', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 // ไลบรารีจาก CDN: แคชไว้ตั้งแต่ติดตั้ง เพื่อให้เปิดออฟไลน์ได้ตั้งแต่ครั้งแรก
 // (ถ้า URL/เวอร์ชันไม่ตรงกับใน index.html จะไม่เสียหาย แค่ไม่ได้ precache)

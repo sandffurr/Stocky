@@ -141,11 +141,11 @@ button:active{transform:scale(.94)}
     <div class="rounded-3xl p-4 shadow-sm border" :class="ui.hero.box">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-semibold opacity-70">ของใช้ในบ้านทั้งหมด</p>
-          <p class="mt-1 leading-none"><span class="text-4xl font-extrabold" x-text="list.length"></span><span class="text-sm font-bold opacity-70 ml-1.5">รายการ</span></p>
+          <p class="text-xs font-semibold opacity-80">ของใช้ในบ้านทั้งหมด</p>
+          <p class="mt-1 leading-none"><span class="text-4xl font-extrabold" x-text="list.length"></span><span class="text-sm font-bold opacity-80 ml-1.5">รายการ</span></p>
         </div>
         <div x-show="list.length" class="text-right rounded-2xl px-3 py-1.5" :class="ui.hero.badge">
-          <p class="text-[11px] font-semibold opacity-70">พร้อมใช้</p>
+          <p class="text-[11px] font-semibold opacity-80">พร้อมใช้</p>
           <p class="text-lg font-extrabold leading-tight"><span x-text="Math.round(pct('ok'))"></span>%</p>
         </div>
       </div>
@@ -646,11 +646,11 @@ const DEFAULT_CATS = [
 ];
 
 const HERO = {
-  pink:{box:'bg-gradient-to-br from-pink-50 to-fuchsia-50 border-pink-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-pink-700 ring-2 ring-pink-300 shadow-sm'},
-  blue:{box:'bg-gradient-to-br from-sky-50 to-blue-50 border-sky-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-blue-700 ring-2 ring-blue-300 shadow-sm'},
-  emerald:{box:'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-emerald-700 ring-2 ring-emerald-300 shadow-sm'},
-  violet:{box:'bg-gradient-to-br from-violet-50 to-purple-50 border-violet-100 text-slate-800', badge:'bg-white/70', track:'bg-white/80', off:'bg-white/70 text-slate-600', on:'bg-white text-violet-700 ring-2 ring-violet-300 shadow-sm'},
-  dark:{box:'bg-zinc-900 border-zinc-800 text-zinc-100', badge:'bg-zinc-800', track:'bg-zinc-800', off:'bg-zinc-800 text-zinc-300', on:'bg-zinc-100 text-zinc-900 ring-2 ring-pink-400'}
+  pink:{box:'bg-gradient-to-br from-pink-200 to-fuchsia-300 border-pink-300 text-slate-900', badge:'bg-white/60', track:'bg-white/60', off:'bg-white/55 text-slate-700', on:'bg-white text-pink-700 ring-2 ring-pink-500 shadow-sm'},
+  blue:{box:'bg-gradient-to-br from-sky-200 to-blue-300 border-sky-300 text-slate-900', badge:'bg-white/60', track:'bg-white/60', off:'bg-white/55 text-slate-700', on:'bg-white text-blue-700 ring-2 ring-blue-500 shadow-sm'},
+  emerald:{box:'bg-gradient-to-br from-emerald-200 to-teal-300 border-emerald-300 text-slate-900', badge:'bg-white/60', track:'bg-white/60', off:'bg-white/55 text-slate-700', on:'bg-white text-emerald-700 ring-2 ring-emerald-500 shadow-sm'},
+  violet:{box:'bg-gradient-to-br from-violet-200 to-purple-300 border-violet-300 text-slate-900', badge:'bg-white/60', track:'bg-white/60', off:'bg-white/55 text-slate-700', on:'bg-white text-violet-700 ring-2 ring-violet-500 shadow-sm'},
+  dark:{box:'bg-gradient-to-br from-pink-900/40 to-zinc-900 border-pink-900/60 text-zinc-100', badge:'bg-zinc-800/80', track:'bg-zinc-800', off:'bg-zinc-800/80 text-zinc-300', on:'bg-zinc-100 text-zinc-900 ring-2 ring-pink-400'}
 };
 const THEMES = {
   pink: {
