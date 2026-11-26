@@ -264,7 +264,7 @@ button:active{transform:scale(.94)}
                   <button type="button" @click="inc(i)" aria-label="เพิ่มจำนวน" class="w-8 h-8 rounded-full text-base font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
                 </div>
 
-                <button type="button" @click="save(i.id,{onList:!onList(i),snoozed:onList(i),buy:i.buy||1})" class="flex-1 h-9 px-3 rounded-full text-[11px] font-bold border truncate" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 ในลิสต์ ('+(i.buy||1)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
+                <button type="button" @click="save(i.id,{onList:!onList(i),snoozed:onList(i)})" class="flex-1 h-9 px-3 rounded-full text-[11px] font-bold border truncate" :class="onList(i)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(i)?'🛒 ในลิสต์ ('+buyOf(i)+')':'＋ ใส่ลิสต์ซื้อ'"></button>
               </div>
             </div>
           </template>
@@ -358,6 +358,7 @@ button:active{transform:scale(.94)}
                 <span x-show="expMeta(i)" class="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold leading-none" :class="expMeta(i)?.badge" x-text="expMeta(i)?.label"></span>
               </div>
               <p x-show="i.note" class="text-[11px] opacity-70 truncate" x-text="'📝 '+i.note"></p>
+              <p x-show="packInfo(i)" class="text-[11px] font-semibold opacity-80" x-text="packText(i)"></p>
               <div class="flex gap-3">
                 <button type="button" @click.stop="save(i.id,{snoozed:true})" class="text-[11px] underline opacity-70">ข้ามไว้ก่อน</button>
                 <button type="button" @click.stop="retire(i)" class="text-[11px] underline opacity-70">🚫 ไม่ซื้อซ้ำ</button>
@@ -365,11 +366,11 @@ button:active{transform:scale(.94)}
             </div>
 
             <div class="flex flex-col items-end gap-1.5 shrink-0" @click.stop>
-              <p class="text-sm font-extrabold" :class="ui.accentText">฿<span x-text="fmt((i.price||0)*(i.buy||1))"></span></p>
+              <p class="text-sm font-extrabold" :class="ui.accentText">฿<span x-text="fmt((i.price||0)*buyOf(i))"></span></p>
               <div class="flex items-center gap-1 rounded-full p-0.5 border" :class="ui.softBtn">
-                <button type="button" @click="save(i.id,{buy:Math.max(1,(i.buy||1)-1)})" aria-label="ลดจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
-                <span class="min-w-6 text-center font-extrabold text-sm" x-text="i.buy||1"></span>
-                <button type="button" @click="save(i.id,{buy:(i.buy||1)+1})" aria-label="เพิ่มจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
+                <button type="button" @click="save(i.id,{buy:buyStep(i,-1)})" aria-label="ลดจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">−</button>
+                <span class="min-w-6 text-center font-extrabold text-sm" x-text="buyOf(i)"></span>
+                <button type="button" @click="save(i.id,{buy:buyStep(i,1)})" aria-label="เพิ่มจำนวนที่จะซื้อ" class="w-8 h-8 rounded-full font-extrabold flex items-center justify-center border" :class="ui.card">＋</button>
               </div>
             </div>
           </div>
@@ -377,7 +378,7 @@ button:active{transform:scale(.94)}
       </div>
     </template>
 
-    <select @change="if($event.target.value){save($event.target.value,{onList:true,snoozed:false,buy:1});$event.target.value=''}" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+    <select @change="if($event.target.value){save($event.target.value,{onList:true,snoozed:false});$event.target.value=''}" class="w-full rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
       <option value="">＋ เลือกของจากสต็อกมาใส่ลิสต์เพิ่มเอง…</option>
       <template x-for="i in list.filter(x=>!onList(x))" :key="i.id">
         <option :value="i.id" x-text="catOf(i.cat).e+' '+i.name"></option>
@@ -539,6 +540,13 @@ button:active{transform:scale(.94)}
           </template>
         </div>
 
+        <div x-show="codeList(detailItem).length" class="rounded-2xl border px-3 py-2.5 text-sm space-y-1" :class="ui.card">
+          <p class="text-[11px] opacity-70 font-semibold">🔗 บาร์โค้ดอื่นที่ผูกไว้</p>
+          <template x-for="c in codeList(detailItem)" :key="c.code">
+            <p class="flex items-center justify-between gap-2"><span class="font-mono text-xs break-all" x-text="c.code"></span><span class="text-xs font-bold shrink-0" x-text="(c.label||'—')+' · '+c.units+' ชิ้น'"></span></p>
+          </template>
+        </div>
+
         <div x-show="detailItem.note" class="rounded-2xl border px-3 py-2.5 text-sm" :class="ui.card">
           <p class="text-[11px] opacity-70 font-semibold mb-0.5">📝 หมายเหตุ</p>
           <p class="break-words whitespace-pre-line" x-text="detailItem.note"></p>
@@ -552,9 +560,10 @@ button:active{transform:scale(.94)}
 
         <div class="flex gap-2 pt-1">
           <button type="button" x-show="detailItem.retired" @click="unretire(detailItem);detail=null" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="ui.softBtn">↩️ กลับมาใช้อีก</button>
-          <button type="button" x-show="!detailItem.retired" @click="save(detailItem.id,{onList:!onList(detailItem),snoozed:onList(detailItem),buy:detailItem.buy||1})" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="onList(detailItem)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(detailItem)?'🛒 เอาออกจากลิสต์':'＋ ใส่ลิสต์ซื้อ'"></button>
+          <button type="button" x-show="!detailItem.retired" @click="save(detailItem.id,{onList:!onList(detailItem),snoozed:onList(detailItem)})" class="flex-1 py-3.5 rounded-2xl border text-xs font-bold" :class="onList(detailItem)?'bg-amber-400/20 border-amber-400 text-amber-700 dark:text-amber-300':ui.softBtn" x-text="onList(detailItem)?'🛒 เอาออกจากลิสต์':'＋ ใส่ลิสต์ซื้อ'"></button>
           <button type="button" @click="editFromDetail()" class="flex-[2] py-3.5 rounded-2xl font-extrabold shadow-sm" :class="ui.primary">✏️ แก้ไข</button>
         </div>
+        <button type="button" x-show="!detailItem.retired" @click="cloneFrom(detailItem)" class="w-full py-2 text-xs font-semibold underline opacity-70">🧪 เพิ่มสูตร/กลิ่นใหม่จากรายการนี้</button>
         <button type="button" x-show="!detailItem.retired" @click="retire(detailItem);detail=null" class="w-full py-2 text-xs font-semibold underline opacity-70">🚫 ไม่ซื้อซ้ำแล้ว (เลิกใช้)</button>
       </div>
     </template>
@@ -606,6 +615,33 @@ button:active{transform:scale(.94)}
           <button type="button" @click="lookupInto(f.barcode)" aria-label="ค้นหาชื่อสินค้าจากบาร์โค้ด" class="px-4 rounded-2xl border text-lg" :class="ui.softBtn">🔎</button>
         </div>
 
+        <!-- บาร์โค้ดอื่นของสินค้านี้ (ล็อต / ขนาด / แพ็ก) -->
+        <div class="space-y-2">
+          <template x-for="(c, ci) in f.codes" :key="ci">
+            <div class="rounded-2xl border p-2.5 space-y-1.5" :class="ui.softBtn">
+              <div class="flex gap-1.5">
+                <input x-model="c.code" inputmode="numeric" placeholder="เลขบาร์โค้ดอื่น" class="flex-1 min-w-0 rounded-xl border p-2.5 text-sm outline-none" :class="ui.input">
+                <button type="button" @click="f.codes.splice(ci,1)" aria-label="ลบเลขนี้" class="w-10 rounded-xl border text-sm" :class="ui.card">✕</button>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <input x-model="c.label" maxlength="20" placeholder="ป้าย เช่น ล็อตใหม่ / 500 มล. / แพ็ก" class="flex-1 min-w-0 rounded-xl border p-2.5 text-sm outline-none" :class="ui.input">
+                <span class="text-[11px] font-semibold shrink-0">ได้</span>
+                <input x-model.number="c.units" type="number" min="1" inputmode="numeric" class="w-16 rounded-xl border p-2.5 text-sm font-bold text-center outline-none" :class="ui.input">
+                <span class="text-[11px] font-semibold shrink-0">ชิ้น</span>
+              </div>
+              <div class="flex gap-1.5">
+                <template x-for="l in ['ล็อตใหม่','ขนาดอื่น','แพ็ก']" :key="l">
+                  <button type="button" @click="c.label=l" class="px-2.5 py-0.5 rounded-full border text-[11px] font-semibold" :class="c.label===l?ui.chipActive:ui.chip" x-text="l"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+          <div class="flex gap-2">
+            <button type="button" @click="f.codes.push({code:'',label:'',units:1})" class="flex-1 py-2 rounded-xl border border-dashed text-xs font-bold" :class="ui.softBtn">＋ บาร์โค้ดอื่นของสินค้านี้ (ล็อต / ขนาด / แพ็ก)</button>
+            <button type="button" @click="openScan('code')" aria-label="สแกนบาร์โค้ดอื่น" class="px-3.5 rounded-xl border text-base" :class="ui.softBtn">📷</button>
+          </div>
+        </div>
+
         <div x-show="lookup.busy||lookup.src||lookup.miss" class="text-[11px] font-semibold rounded-xl px-3 py-2 space-y-1" :class="ui.softBtn">
           <div class="flex items-center gap-2">
             <span x-show="lookup.busy" class="inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
@@ -635,7 +671,7 @@ button:active{transform:scale(.94)}
           <label class="font-semibold">คงเหลือตอนนี้
             <input x-model.number="f.qty" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
           </label>
-          <label class="font-semibold">เตือนเมื่อเหลือ ≤
+          <label class="font-semibold">เตือนเมื่อเหลือ ≤ <span class="font-normal opacity-70 text-[11px]">(0 = ไม่เตือน)</span>
             <input x-model.number="f.min" type="number" min="0" inputmode="numeric" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
           </label>
           <label class="font-semibold">ราคา/ชิ้น (฿)
@@ -648,6 +684,10 @@ button:active{transform:scale(.94)}
           <span class="flex-1">จากที่แกะของชิ้นนี้ราว <b x-text="Math.round((usage(f)?.perWeek||0)*10)/10"></b> ชิ้น/สัปดาห์ แนะนำให้เตือนเมื่อเหลือ ≤ <b x-text="usage(f)?.min"></b> (พอใช้ราว 7 วัน)</span>
           <button type="button" @click="f.min=usage(f).min" class="shrink-0 px-3 py-1.5 rounded-full font-bold" :class="ui.primary">ใช้ค่านี้</button>
         </div>
+
+        <label class="block text-xs font-semibold">ซื้อครั้งละ (ชิ้น) <span class="font-normal opacity-70 text-[11px]">เว้นว่าง = ให้แอปคำนวณให้</span>
+          <input x-model.number="f.buyEach" type="number" min="0" inputmode="numeric" placeholder="อัตโนมัติ" class="mt-1 w-full rounded-2xl border p-3 text-base font-bold outline-none" :class="ui.input">
+        </label>
 
         <div class="rounded-2xl p-2.5 border flex items-center justify-between text-xs" :class="ui.softBtn">
           <span>สถานะอัตโนมัติ:</span>
@@ -735,6 +775,13 @@ button:active{transform:scale(.94)}
           </div>
           <span class="px-3 py-1 rounded-full text-xs font-bold" :class="stateMeta(items[hit]).badge" x-text="stateMeta(items[hit]).label"></span>
         </div>
+        <div x-show="hitInfo&&hitInfo.id===hit&&(hitInfo.label||hitInfo.units>1)" class="rounded-2xl border p-3 flex items-center gap-3" :class="ui.softBtn">
+          <div class="flex-1 text-xs min-w-0">
+            <p class="font-bold" x-text="'สแกนเลขของ: '+(hitInfo&&hitInfo.label?hitInfo.label:'ขนาด/ล็อตอื่น')"></p>
+            <p class="opacity-70" x-text="'= '+(hitInfo?hitInfo.units:1)+' ชิ้นต่อครั้ง'"></p>
+          </div>
+          <button type="button" @click="incBy({id:hit,...items[hit]}, hitInfo.units)" class="shrink-0 px-4 py-2.5 rounded-2xl font-extrabold text-sm" :class="ui.primary" x-text="'＋'+(hitInfo?hitInfo.units:1)+' ชิ้น'"></button>
+        </div>
         <div class="flex items-center justify-center gap-6 py-2">
           <button type="button" @click="dec({id:hit,...items[hit]})" aria-label="ลดจำนวน" class="w-16 h-16 rounded-2xl border text-3xl font-extrabold" :class="ui.stepBtn">−</button>
           <div class="text-center">
@@ -744,6 +791,63 @@ button:active{transform:scale(.94)}
           <button type="button" @click="inc({id:hit,...items[hit]})" aria-label="เพิ่มจำนวน" class="w-16 h-16 rounded-2xl border text-3xl font-extrabold" :class="ui.stepBtn">＋</button>
         </div>
         <button type="button" @click="hit=null" class="w-full py-4 rounded-2xl font-extrabold" :class="ui.primary">เสร็จสิ้น ✨</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- สแกนเจอเลขที่ยังไม่มี: สินค้าใหม่ หรือผูกกับของเดิม -->
+  <div x-show="!!choice" class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="choice=null">
+    <template x-if="choice">
+      <div class="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-t-3xl border-t p-5 space-y-3 pb-safe" :class="ui.modal">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-xs opacity-70">สแกนเจอเลขที่ยังไม่มีในระบบ</p>
+            <p class="text-lg font-extrabold break-all" x-text="choice.code"></p>
+            <p x-show="choice.looking" class="text-xs opacity-70 mt-1">กำลังค้นหาชื่อสินค้า…</p>
+            <p x-show="choice.name" class="text-sm font-bold mt-1" x-text="'🔎 '+choice.name+' ('+choice.src+')'"></p>
+          </div>
+          <button type="button" @click="choice=null" aria-label="ปิด" class="w-8 h-8 rounded-full shrink-0 text-sm" :class="ui.softBtn">✕</button>
+        </div>
+
+        <div x-show="choice.step==='ask'" class="space-y-2">
+          <button type="button" @click="choiceNew()" class="w-full py-3.5 rounded-2xl font-extrabold" :class="ui.primary">➕ เป็นสินค้าใหม่</button>
+          <button type="button" @click="choice.step='pick'" class="w-full py-3.5 rounded-2xl border font-bold text-sm" :class="ui.softBtn">🔗 เป็นของที่มีอยู่แล้ว (คนละล็อต / ขนาด / แพ็ก)</button>
+        </div>
+
+        <div x-show="choice.step==='pick'" class="space-y-2">
+          <p class="text-xs font-bold">เลือกสินค้าเดิมที่เลขนี้เป็นของมัน</p>
+          <input x-model="choice.q" placeholder="ค้นหาชื่อสินค้าเดิม" autocomplete="off" class="w-full rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
+          <template x-for="h in choiceHits" :key="h.id">
+            <button type="button" @click="choicePick(h)" class="w-full flex items-center gap-2.5 p-2 rounded-2xl border text-left" :class="ui.card">
+              <span class="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border text-base overflow-hidden" :class="ui.thumb">
+                <template x-if="h.img"><img :src="h.img" class="w-full h-full object-cover" alt=""></template>
+                <template x-if="!h.img"><span x-text="catOf(h.cat).e"></span></template>
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-bold truncate" x-text="h.name"></span>
+                <span class="block text-[11px] opacity-70" x-text="h.retired?'🚫 เลิกใช้แล้ว':('เหลือ '+(Number(h.qty)||0)+' ชิ้น')"></span>
+              </span>
+            </button>
+          </template>
+          <p x-show="!choiceHits.length" class="text-xs opacity-70 text-center py-2">ไม่พบ ลองพิมพ์ชื่ออื่น หรือกลับไปเลือก "สินค้าใหม่"</p>
+          <button type="button" @click="choice.step='ask'" class="w-full py-2 text-xs underline opacity-70">← กลับ</button>
+        </div>
+
+        <div x-show="choice.step==='link'" class="space-y-2.5">
+          <p class="text-sm font-bold" x-text="'ผูกกับ: '+(items[choice.pick]?items[choice.pick].name:'')"></p>
+          <p class="text-xs opacity-70">เลขนี้คืออะไร?</p>
+          <div class="flex gap-1.5">
+            <template x-for="l in ['ล็อตใหม่','ขนาดอื่น','แพ็ก']" :key="l">
+              <button type="button" @click="choice.label=l" class="px-3 py-1.5 rounded-full border text-xs font-semibold" :class="choice.label===l?ui.chipActive:ui.chip" x-text="l"></button>
+            </template>
+          </div>
+          <input x-model="choice.label" maxlength="20" placeholder="ป้าย เช่น 500 มล." class="w-full rounded-2xl border p-3 text-sm outline-none" :class="ui.input">
+          <label class="flex items-center gap-2 text-sm font-semibold">สแกนครั้งหนึ่งได้กี่ชิ้น
+            <input x-model.number="choice.units" type="number" min="1" inputmode="numeric" class="w-20 rounded-xl border p-2.5 text-sm font-bold text-center outline-none" :class="ui.input">
+          </label>
+          <button type="button" @click="choiceLink()" class="w-full py-3.5 rounded-2xl font-extrabold" :class="ui.primary">🔗 ผูกเลขนี้</button>
+          <button type="button" @click="choice.step='pick'" class="w-full py-2 text-xs underline opacity-70">← เลือกสินค้าอื่น</button>
+        </div>
       </div>
     </template>
   </div>
@@ -876,7 +980,7 @@ Alpine.data('app', () => ({
   items:{}, customCats:null,
   q:'', cat:'all', st:'all', sortBy:'name',
   f:null, catForm:null,
-  scan:false, scanMsg:'', scanForForm:false, _handlingScan:false, _scanSeq:0,
+  scan:false, scanMsg:'', scanForForm:false, _handlingScan:false, _scanSeq:0, hitInfo:null, choice:null,
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
@@ -927,7 +1031,7 @@ Alpine.data('app', () => ({
     ['gesturestart','gesturechange','gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), {passive:false}));
     window.addEventListener('stocky-update', () => { this.updateReady = true; });
     // ปุ่ม Back ของมือถือ: ปิด modal ชั้นบนสุดแทนการออกจากแอป
-    const anyOpen = () => !!(this.f || this.catForm || this.scan || this.hit || this.detail);
+    const anyOpen = () => !!(this.f || this.catForm || this.scan || this.hit || this.detail || this.choice);
     this.$watch(anyOpen, open => {
       clearTimeout(this._ovT);
       if(open){
@@ -940,7 +1044,8 @@ Alpine.data('app', () => ({
     });
     window.addEventListener('popstate', () => {
       if(!this._ov) return;
-      if(this.hit) this.hit = null;
+      if(this.choice) this.choice = null;
+      else if(this.hit) this.hit = null;
       else if(this.scan) this.closeScan();
       else if(this.catForm) this.catForm = null;
       else if(this.f) this.f = null;
@@ -964,6 +1069,10 @@ Alpine.data('app', () => ({
       onValue(ref(db, this.base() + 'items'), s => {
         this.items = s.val() || {};
         this.loaded = true;
+        // แก้จำนวนติดลบ (เกิดเมื่อสองเครื่องกด − พร้อมกัน) กลับเป็น 0
+        for(const [id, v] of Object.entries(this.items)){
+          if(Number(v?.qty) < 0) update(ref(db, this.base() + 'items/' + id), {qty: 0}).catch(() => {});
+        }
         S('cache_' + this.code, JSON.stringify(this.items));
       }, e => { this.loaded = true; this.flash('อ่านข้อมูลไม่ได้: ' + e.code); });
       onValue(ref(db, this.base() + 'meta/name'), s => {
@@ -1053,6 +1162,98 @@ Alpine.data('app', () => ({
     }
   },
 
+  // ---------- หลายบาร์โค้ดต่อสินค้า (ล็อต / ขนาด / แพ็ก) ----------
+  codeList(i){ return Object.entries(i?.codes || {}).map(([code, v]) => ({code, label: String(v?.l || ''), units: Math.max(1, Number(v?.u) || 1)})); },
+  findByCode(code){
+    code = String(code || '').trim();
+    if(!code) return null;
+    for(const i of this.allList){
+      if(String(i.barcode || '').trim() === code) return {item: i, label: '', units: 1, primary: true};
+      const c = i.codes && i.codes[code];
+      if(c) return {item: i, label: String(c.l || ''), units: Math.max(1, Number(c.u) || 1), primary: false};
+    }
+    return null;
+  },
+  packInfo(i){ return this.codeList(i).filter(c => c.units > 1).sort((a, b) => a.units - b.units)[0] || null; },
+  packStep(i){ return this.packInfo(i)?.units || 1; },
+  buyStep(i, dir){
+    const st = this.packStep(i), b = this.buyOf(i);
+    return dir > 0 ? Math.floor(b / st) * st + st : Math.max(st, Math.ceil(b / st) * st - st);
+  },
+  packText(i){ const p = this.packInfo(i); return p ? '≈ ' + Math.ceil(this.buyOf(i) / p.units) + ' แพ็ก (' + p.units + ' ชิ้น/แพ็ก)' : ''; },
+  incBy(i, n, quiet){
+    n = Math.max(1, Math.floor(Number(n) || 1));
+    const raw = Number(this.items[i.id]?.qty) || 0;
+    const q = Math.max(0, raw) + n, min = Number(i.min) || 0;
+    const patch = {qty: raw < 0 ? n : increment(n)};
+    if(q > min && !this.expMeta(i)?.urgent) patch.onList = false;
+    this.save(i.id, patch);
+    if(!quiet) this.flash('เพิ่ม +' + n + ' ชิ้นแล้ว ✅');
+  },
+  addFormCode(code){
+    if(!this.f) return;
+    code = String(code || '').trim();
+    if(!code) return;
+    if(code === String(this.f.barcode || '').trim() || (this.f.codes || []).some(c => String(c.code).trim() === code)){ this.flash('มีเลขนี้ในรายการนี้แล้ว'); return; }
+    this.f.codes = [...(this.f.codes || []), {code, label: '', units: 1}];
+    this.flash('เพิ่มเลข ' + code + ' แล้ว ตั้งป้ายและจำนวนชิ้นได้ด้านล่าง');
+  },
+  async askScan(code){
+    this.choice = {code, step: 'ask', name: '', src: '', q: '', pick: null, label: 'ล็อตใหม่', units: 1, looking: /^\d{6,14}$/.test(code)};
+    if(!this.choice.looking) return;
+    const r = await this.lookupProduct(code);
+    if(!this.choice || this.choice.code !== code) return;
+    this.choice.looking = false;
+    if(r && !r.fail){ this.choice.name = r.name; this.choice.src = r.source; this.choice.q = r.name; }
+  },
+  get choiceHits(){
+    const c = this.choice;
+    if(!c) return [];
+    const q = this.norm(c.q);
+    const byName = (a, b) => (a.name || '').localeCompare(b.name || '', 'th');
+    if(!q) return this.allList.slice().sort(byName).slice(0, 8);
+    const tokens = String(c.q).split(/\s+/).map(t => this.norm(t)).filter(t => t.length >= 3);
+    const rank = i => {
+      const n = this.norm(i.name);
+      return n === q ? 0 : n.startsWith(q) ? 1 : (n.includes(q) || q.includes(n) || tokens.some(t => n.includes(t))) ? 2 : 3;
+    };
+    return this.allList.map(i => ({i, r: rank(i)})).filter(x => x.r < 3)
+      .sort((a, b) => a.r - b.r || byName(a.i, b.i)).slice(0, 8).map(x => x.i);
+  },
+  choicePick(h){ this.choice.pick = h.id; this.choice.step = 'link'; },
+  choiceNew(){
+    const c = this.choice; if(!c) return;
+    this.choice = null;
+    this.add({barcode: c.code, name: c.name || ''});
+    if(c.name) this.lookup = {busy: false, src: c.src, miss: false, detail: ''};
+    else this.lookupInto(c.code);
+  },
+  choiceLink(){
+    const c = this.choice;
+    if(!c || !c.pick || !this.items[c.pick]) return;
+    const label = String(c.label || '').trim().slice(0, 20);
+    const units = Math.max(1, Math.floor(Number(c.units) || 1));
+    this.save(c.pick, {['codes/' + c.code]: {l: label, u: units}});
+    this.choice = null;
+    this.hitInfo = {id: c.pick, label, units, code: c.code};
+    this.hit = c.pick;
+    this.flash('ผูกเลข ' + c.code + ' กับรายการเดิมแล้ว 🔗');
+  },
+  cloneFrom(i){
+    this.detail = null;
+    this.add({name: i.name, cat: this.resolveCatKey(i.cat), price: i.price || 0, min: i.min || 0, buyEach: i.buyEach || ''});
+    this.flash('คัดลอกจาก "' + i.name + '" แก้ชื่อส่วนที่ต่าง (สูตร/กลิ่น) ได้เลย', 4000);
+  },
+
+  // จำนวนที่ควรซื้อ: ที่ผู้ใช้กดปรับ > "ซื้อครั้งละ" ที่ตั้งไว้ > คำนวณให้พอพ้นจุดเตือน (ราว 2 เท่าของจุดเตือน)
+  buyOf(i){
+    const b = Number(i?.buy); if(b > 0) return b;
+    const e = Number(i?.buyEach); if(e > 0) return e;
+    const q = Math.max(0, Number(i?.qty) || 0), m = Number(i?.min) || 0;
+    const base = m > 0 ? Math.max(1, Math.max(m * 2, m + 1) - q) : 1;
+    const pk = this.packInfo(i);
+    return pk ? Math.ceil(base / pk.units) * pk.units : base;   // ถ้ามีเลขแพ็ก ปัดขึ้นเป็นจำนวนเต็มแพ็ก
+  },
   getState(i){
     const qty = Number(i?.qty) || 0;
     const min = Number(i?.min) || 0;
@@ -1080,7 +1281,7 @@ Alpine.data('app', () => ({
   },
   countByState(k){ return this.list.filter(i => this.getState(i) === k).length; },
 
-  get allList(){ return Object.entries(this.items).map(([id, v]) => ({id, ...v})); },
+  get allList(){ return Object.entries(this.items).map(([id, v]) => ({id, ...v, qty: Math.max(0, Number(v?.qty) || 0)})); },
   get list(){ return this.allList.filter(i => !i.retired); },
   get retiredList(){ return this.allList.filter(i => i.retired).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'th')); },
   get filtered(){
@@ -1091,7 +1292,7 @@ Alpine.data('app', () => ({
       (!q ||
         (i.name || '').toLowerCase().includes(q) ||
         (i.note || '').toLowerCase().includes(q) ||
-        String(i.barcode || '').includes(q))
+        String(i.barcode || '').includes(q) || Object.keys(i.codes || {}).some(k => k.includes(q)))
     );
     return list.sort((a, b) => {
       if(this.sortBy === 'stock'){
@@ -1113,7 +1314,7 @@ Alpine.data('app', () => ({
   byCat(k){
     return this.filtered.filter(i => this.resolveCatKey(i.cat) === k);
   },
-  get detailItem(){ return this.detail && this.items[this.detail] ? {id: this.detail, ...this.items[this.detail]} : null; },
+  get detailItem(){ const v = this.detail && this.items[this.detail]; return v ? {id: this.detail, ...v, qty: Math.max(0, Number(v.qty) || 0)} : null; },
   openDetail(i){ this.detail = i.id; },
   editFromDetail(){ const i = this.detailItem; if(!i) return; this.detail = null; this.edit(i); },
   thDate(v){ const d = new Date(v + 'T00:00:00'); return isNaN(d) ? v : d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'numeric'}); },
@@ -1125,7 +1326,7 @@ Alpine.data('app', () => ({
       ['วันหมดอายุ', i.exp ? this.thDate(i.exp) + (e ? ' (' + e.label.replace(/^EXP /, '') + ')' : '') : '—'],
       ['แกะล่าสุด', i.lastOpened ? this.ago(i.lastOpened) : 'ยังไม่เคยแกะ'],
       ['บาร์โค้ด', i.barcode || '—'],
-      i.retired ? ['สถานะ', '🚫 เลิกใช้แล้ว'] : ['ลิสต์ซื้อ', this.onList(i) ? 'อยู่ในลิสต์ (ซื้อ ' + (i.buy || 1) + ')' : 'ไม่อยู่ในลิสต์']
+      i.retired ? ['สถานะ', '🚫 เลิกใช้แล้ว'] : ['ลิสต์ซื้อ', this.onList(i) ? 'อยู่ในลิสต์ (ซื้อ ' + this.buyOf(i) + ')' : 'ไม่อยู่ในลิสต์']
     ];
   },
   catOf(k){
@@ -1134,7 +1335,7 @@ Alpine.data('app', () => ({
 
   onList(i){
     if(i.snoozed) return false;
-    const expUrgent = !!this.expMeta(i)?.urgent;
+    const expUrgent = !!this.expMeta(i)?.urgent && i.expAck !== i.exp;
     if(i.onList === false && this.getState(i) === 'ok' && !expUrgent) return false;
     return this.getState(i) !== 'ok' || expUrgent || !!i.onList;
   },
@@ -1163,10 +1364,10 @@ Alpine.data('app', () => ({
   pct(k){ const n = this.list.length; return n ? this.countByState(k) / n * 100 : 0; },
   level(i){ const q = Math.max(0, Number(i.qty) || 0), m = Number(i.min) || 0; return Math.round(Math.min(1, q / Math.max(m * 2, q, 1)) * 100); },
   shopByCat(k){ return this.shopList.filter(i => this.resolveCatKey(i.cat) === k).sort((a, b) => (!!a.inCart) - (!!b.inCart)); },
-  shopCatTotal(k){ return this.shopByCat(k).reduce((t, i) => t + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
+  shopCatTotal(k){ return this.shopByCat(k).reduce((t, i) => t + (Number(i.price) || 0) * this.buyOf(i), 0); },
   get checkedCount(){ return this.shopList.filter(i => i.inCart).length; },
-  get total(){ return this.shopList.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
-  get totalChecked(){ return this.shopList.filter(i => i.inCart).reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.buy) || 1), 0); },
+  get total(){ return this.shopList.reduce((s, i) => s + (Number(i.price) || 0) * this.buyOf(i), 0); },
+  get totalChecked(){ return this.shopList.filter(i => i.inCart).reduce((s, i) => s + (Number(i.price) || 0) * this.buyOf(i), 0); },
   fmt(n){ return Number(n || 0).toLocaleString('th-TH', {maximumFractionDigits: 2}); },
   ago(t){ const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'วันนี้' : d + ' วันก่อน'; },
 
@@ -1233,13 +1434,7 @@ Alpine.data('app', () => ({
     this.save(i.id, patch);
     if(q === 0) this.flash('หมดแล้ว เข้าลิสต์ซื้อ 🛒', 5000, null, {label: 'ไม่ซื้อแล้ว', fn: () => this.retire(i)});
   },
-  inc(i){
-    const q = (Number(i.qty) || 0) + 1;
-    const min = Number(i.min) || 0;
-    const patch = {qty: increment(1)};
-    if(q > min && !this.expMeta(i)?.urgent) patch.onList = false;
-    this.save(i.id, patch);
-  },
+  inc(i){ this.incBy(i, 1, true); },
   norm(v){ return String(v || '').toLowerCase().replace(/\s+/g, ''); },
   // แนะนำจากของเดิมตอนพิมพ์ชื่อ (เฉพาะตอนเพิ่มใหม่) รวมของที่เลิกใช้แล้วด้วย
   get nameHints(){
@@ -1257,23 +1452,34 @@ Alpine.data('app', () => ({
   add(pre = {}){
     const defaultCat = this.cat !== 'all' ? this.cat : (this.allCats[0]?.k || '');
     this.lookup = {busy:false, src:'', miss:false, detail:''};
-    this.f = {name:'', cat:defaultCat, barcode:'', img:'', imgUrl:'', qty:1, min:1, price:0, exp:'', note:'', ...pre};
+    this.f = {name:'', cat:defaultCat, barcode:'', img:'', imgUrl:'', qty:1, min:0, price:0, exp:'', note:'', codes:[], ...pre};
     this._f0 = JSON.stringify(this.f);
   },
-  edit(i){ this.lookup = {busy:false, src:'', miss:false, detail:''}; this.f = {...i, cat: this.resolveCatKey(i.cat), exp: i.exp || '', note: i.note || '', imgUrl: /^https?:/.test(i.img || '') ? i.img : ''}; this._f0 = JSON.stringify(this.f); },
+  edit(i){ this.lookup = {busy:false, src:'', miss:false, detail:''}; this.f = {...i, codes: this.codeList(i), cat: this.resolveCatKey(i.cat), exp: i.exp || '', note: i.note || '', imgUrl: /^https?:/.test(i.img || '') ? i.img : ''}; this._f0 = JSON.stringify(this.f); },
   commit(){
     const f = this.f;
     if(!f || !f.name || !f.name.trim()) return this.flash('ใส่ชื่อสินค้าก่อนน้า');
-    if(!f.id){
-      const bc = String(f.barcode || '').trim();
-      const dup = this.allList.find(i => this.norm(i.name) === this.norm(f.name)) || (bc && this.allList.find(i => String(i.barcode || '').trim() === bc));
-      if(dup && !confirm('มี "' + dup.name + '"' + (dup.retired ? ' (เลิกใช้แล้ว)' : '') + ' อยู่ในรายการแล้ว ต้องการเพิ่มซ้ำจริงไหม?')) return;
+    const bc = String(f.barcode || '').trim();
+    const codesObj = {};
+    for(const c of (f.codes || [])){
+      const code = String(c.code || '').replace(/[.#$\[\]\/\s]/g, '');
+      if(!code || code === bc || codesObj[code]) continue;
+      codesObj[code] = {l: String(c.label || '').trim().slice(0, 20), u: Math.max(1, Math.floor(Number(c.units) || 1))};
     }
+    if(!f.id){
+      const dupName = this.allList.find(i => this.norm(i.name) === this.norm(f.name));
+      if(dupName && !confirm('มี "' + dupName.name + '"' + (dupName.retired ? ' (เลิกใช้แล้ว)' : '') + ' อยู่ในรายการแล้ว ต้องการเพิ่มซ้ำจริงไหม?')) return;
+    }
+    const clash = [bc, ...Object.keys(codesObj)].filter(Boolean).map(c => ({c, h: this.findByCode(c)})).find(x => x.h && x.h.item.id !== f.id);
+    if(clash && !confirm('เลข ' + clash.c + ' ถูกใช้กับ "' + clash.h.item.name + '" อยู่แล้ว ต้องการผูกซ้ำจริงไหม?')) return;
     const qty = Number(f.qty) || 0;
     const min = Number(f.min) || 0;
     const exp = String(f.exp || '').trim();
     const note = String(f.note || '').trim();
-    const expUrgent = !!this.expMeta({exp})?.urgent;
+    const prevItem = f.id ? this.items[f.id] : null;
+    const ackKept = !!prevItem && !!exp && prevItem.expAck === exp;
+    const expUrgent = !!this.expMeta({exp})?.urgent && !ackKept;
+    const buyEach = Math.floor(Number(f.buyEach) || 0);
     const data = {
       name: f.name.trim(),
       cat: this.resolveCatKey(f.cat),
@@ -1285,10 +1491,13 @@ Alpine.data('app', () => ({
       exp,
       note,
       onList: qty <= 0 || (min > 0 && qty <= min) || expUrgent ? true : !!f.onList,
-      snoozed: false
+      snoozed: false,
+      buyEach: buyEach > 0 ? buyEach : null,
+      codes: Object.keys(codesObj).length ? codesObj : null
     };
+    if(prevItem && prevItem.expAck && !ackKept) data.expAck = null;
     if(f.id) this.save(f.id, data);
-    else set(push(ref(db, this.base() + 'items')), {...data, buy: 1, createdAt: Date.now()});
+    else set(push(ref(db, this.base() + 'items')), {...data, createdAt: Date.now()});
     this.f = null;
     this.flash('บันทึกเรียบร้อย ✨');
   },
@@ -1305,20 +1514,25 @@ Alpine.data('app', () => ({
   },
   restock(){
     const up = {};
-    let cleared = 0;
+    let cleared = 0, kept = 0;
     this.shopList.filter(i => i.inCart).forEach(i => {
       const p = i.id + '/';
-      up[p + 'qty'] = Math.max(0, Number(i.qty) || 0) + (Number(i.buy) || 1);
+      const prev = Math.max(0, Number(i.qty) || 0);
+      up[p + 'qty'] = prev + this.buyOf(i);
       up[p + 'onList'] = false;
       up[p + 'snoozed'] = false;
-      // ล้างวันหมดอายุเมื่อชิ้นเก่าหมดแล้ว หรือเลยกำหนด เพื่อให้ใส่วันของล็อตใหม่
-      if(i.exp && (this.expMeta(i)?.urgent || (Number(i.qty) || 0) <= 0)){ up[p + 'exp'] = ''; cleared++; }
       up[p + 'inCart'] = false;
-      up[p + 'buy'] = 1;
+      up[p + 'buy'] = null;
+      const em = this.expMeta(i);
+      if(i.exp){
+        if(prev <= 0 || (em && em.days < 0)){ up[p + 'exp'] = ''; up[p + 'expAck'] = null; cleared++; }   // ของเก่าหมด/เลยกำหนด: ให้ใส่วันของล็อตใหม่
+        else if(em && em.urgent){ up[p + 'expAck'] = i.exp; kept++; }                                  // ของเก่ายังเหลือ: เก็บวันเดิมไว้เตือน แต่ไม่ดึงกลับเข้าลิสต์ซื้อ
+      }
     });
     update(ref(db, this.base() + 'items'), up).then(() => {
       this.burst();
-      this.flash(cleared ? 'เติมของแล้ว 🎉 ล้างวันหมดอายุเก่า ' + cleared + ' รายการ (ใส่วันใหม่ได้ที่การ์ดสินค้า)' : 'เติมของเข้าคลังเรียบร้อย! 🎉', cleared ? 4500 : 2200);
+      const extra = [cleared ? 'ล้างวันหมดอายุเก่า ' + cleared + ' รายการ (ใส่วันใหม่ได้ที่การ์ด)' : '', kept ? 'เก็บวันหมดอายุของที่เหลือเดิมไว้ ' + kept + ' รายการ' : ''].filter(Boolean).join(' · ');
+      this.flash(extra ? 'เติมของแล้ว 🎉 ' + extra : 'เติมของเข้าคลังเรียบร้อย! 🎉', extra ? 5000 : 2200);
     });
   },
 
@@ -1515,6 +1729,11 @@ Alpine.data('app', () => ({
     await this.closeScan();
     if(!code){ this._handlingScan = false; return; }
     if(navigator.vibrate) navigator.vibrate(40);
+    if(this.scanForForm === 'code' && this.f){
+      this.addFormCode(code);
+      this._handlingScan = false;
+      return;
+    }
     if(this.scanForForm && this.f){
       this.f.barcode = code;
       this.flash('สแกนบาร์โค้ดแล้ว: ' + code);
@@ -1522,19 +1741,18 @@ Alpine.data('app', () => ({
       this.lookupInto(code);
       return;
     }
-    const found = this.allList.find(i => String(i.barcode || '').trim() === code);
+    const hitInfo = this.findByCode(code);
+    const found = hitInfo && hitInfo.item;
     if(found && found.retired){
       this.$nextTick(() => {
-        if(confirm('"' + found.name + '" เลิกใช้ไปแล้ว ให้กลับมาใช้อีกครั้งไหม?')){ this.unretire(found); this.hit = found.id; }
+        if(confirm('"' + found.name + '" เลิกใช้ไปแล้ว ให้กลับมาใช้อีกครั้งไหม?')){ this.unretire(found); this.hitInfo = {id: found.id, label: hitInfo.label, units: hitInfo.units, code}; this.hit = found.id; }
         this._handlingScan = false;
       });
     }else if(found){
-      this.$nextTick(() => { this.hit = found.id; this._handlingScan = false; });
+      this.$nextTick(() => { this.hitInfo = {id: found.id, label: hitInfo.label, units: hitInfo.units, code}; this.hit = found.id; this._handlingScan = false; });
     }else{
-      this.flash('สินค้าใหม่ กำลังค้นหาข้อมูลให้…');
-      this.add({barcode: code});
       this._handlingScan = false;
-      this.lookupInto(code);
+      this.askScan(code);
     }
   },
 
