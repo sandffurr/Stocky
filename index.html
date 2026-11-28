@@ -409,20 +409,17 @@ button:active{transform:scale(.94)}
       <div class="flex items-center justify-between">
         <div>
           <p class="font-bold text-base">🗂️ หมวดหมู่ของใช้</p>
-          <p class="text-xs opacity-65">เพิ่ม ลบ เรียงลำดับ (▲▼) หรือเปลี่ยนอีโมจิได้เอง ลำดับนี้ใช้ทั้งหน้า MyStock และหน้าต้องซื้อ</p>
+          <p class="text-xs opacity-65">เพิ่ม ลบ เรียงลำดับ (ลากที่ ≡) หรือเปลี่ยนอีโมจิได้เอง ลำดับนี้ใช้ทั้งหน้า MyStock และหน้าต้องซื้อ</p>
         </div>
         <button type="button" @click="openCatModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold" :class="ui.primary">＋ เพิ่มหมวด</button>
       </div>
       <div class="space-y-1.5">
         <template x-for="(c, idx) in allCats" :key="c.k">
-          <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl border" :class="ui.softBtn">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="text-xl w-8 h-8 shrink-0 rounded-xl flex items-center justify-center border" :class="ui.card" x-text="c.e"></span>
-              <span class="font-semibold text-sm truncate" x-text="c.n"></span>
-            </div>
+          <div data-cat-row class="flex items-center gap-2 p-2.5 rounded-2xl border select-none" :class="[ui.softBtn, drag&&drag.over===idx&&drag.from!==idx?'ring-2 ring-pink-400':'', drag&&drag.from===idx?'shadow-lg relative z-10 opacity-90':'']" :style="drag&&drag.from===idx?('transform:translateY('+drag.dy+'px);transition:none'):''">
+            <button type="button" style="touch-action:none" @pointerdown="dragStart($event, idx)" @keydown.up.prevent="moveCat(c,-1)" @keydown.down.prevent="moveCat(c,1)" aria-label="ลากเพื่อเรียงลำดับหมวด (หรือกดลูกศรขึ้น/ลงบนคีย์บอร์ด)" class="w-8 h-9 shrink-0 rounded-xl border text-lg leading-none cursor-grab" :class="ui.card">≡</button>
+            <span class="text-xl w-8 h-8 shrink-0 rounded-xl flex items-center justify-center border" :class="ui.card" x-text="c.e"></span>
+            <span class="flex-1 min-w-0 font-semibold text-sm truncate" x-text="c.n"></span>
             <div class="flex items-center gap-1 shrink-0">
-              <button type="button" @click="moveCat(c,-1)" :disabled="idx===0" aria-label="เลื่อนขึ้น" class="w-8 h-8 rounded-xl border text-xs disabled:opacity-30" :class="ui.card">▲</button>
-              <button type="button" @click="moveCat(c,1)" :disabled="idx===allCats.length-1" aria-label="เลื่อนลง" class="w-8 h-8 rounded-xl border text-xs disabled:opacity-30" :class="ui.card">▼</button>
               <button type="button" @click="openCatModal(c)" class="px-2.5 py-1.5 rounded-xl text-xs border" :class="ui.card">แก้ไข</button>
               <button type="button" x-show="allCats.length > 1" @click="delCat(c)" class="px-2.5 py-1.5 rounded-xl text-xs border border-red-300 text-red-500">ลบ</button>
             </div>
@@ -980,7 +977,7 @@ Alpine.data('app', () => ({
   items:{}, customCats:null,
   q:'', cat:'all', st:'all', sortBy:'name',
   f:null, catForm:null,
-  scan:false, scanMsg:'', scanForForm:false, _handlingScan:false, _scanSeq:0, hitInfo:null, choice:null,
+  scan:false, scanMsg:'', scanForForm:false, _handlingScan:false, _scanSeq:0, hitInfo:null, choice:null, drag:null,
   readerId:'reader-0',
   torchOn:false,
   hit:null, toast:'', scanner:null, sparkles:[],
@@ -1378,14 +1375,54 @@ Alpine.data('app', () => ({
     set(ref(db, this.base() + 'meta/name'), n || null).catch(() => {});
     this.flash(n ? 'ตั้งชื่อบ้านแล้ว 🏠' : 'ล้างชื่อบ้านแล้ว');
   },
-  moveCat(c, dir){
+  moveCat(c, dir){ const i = this.allCats.findIndex(x => x.k === c.k); this.moveCatTo(i, i + dir); },
+  moveCatTo(from, to){
     const next = [...this.allCats];
-    const i = next.findIndex(x => x.k === c.k), j = i + dir;
-    if(i < 0 || j < 0 || j >= next.length) return;
-    [next[i], next[j]] = [next[j], next[i]];
+    if(from < 0 || to < 0 || from >= next.length || to >= next.length || from === to) return;
+    const [m] = next.splice(from, 1);
+    next.splice(to, 0, m);
     this.customCats = next;
     S('cats_' + this.code, JSON.stringify(next));
     set(ref(db, this.base() + 'cats'), next).catch(() => {});
+  },
+  // แถวที่ตัวชี้อยู่ (ตำแหน่งบนหน้า) ใช้เป็นตำแหน่งปลายทาง
+  dragTarget(pageY, rows){
+    for(let i = 0; i < rows.length; i++){ if(pageY < rows[i].top + rows[i].h) return i; }
+    return Math.max(0, rows.length - 1);
+  },
+  // ลากเรียงลำดับหมวด (pointer events ใช้ได้ทั้งนิ้วและเมาส์) เลื่อนหน้าให้เองเมื่อลากใกล้ขอบจอ
+  dragStart(ev, idx){
+    if(ev.button > 0) return;
+    ev.preventDefault();
+    const rows = [...document.querySelectorAll('[data-cat-row]')].map(r => { const b = r.getBoundingClientRect(); return {top: b.top + window.scrollY, h: b.height}; });
+    const y0 = ev.clientY, sy0 = window.scrollY;
+    let lastY = y0, raf = 0;
+    this.drag = {from: idx, over: idx, dy: 0};
+    const update = () => {
+      if(!this.drag) return;
+      this.drag.dy = (lastY - y0) + (window.scrollY - sy0);
+      this.drag.over = this.dragTarget(lastY + window.scrollY, rows);
+    };
+    const loop = () => {
+      if(!this.drag) return;
+      if(lastY < 90) window.scrollBy(0, -10); else if(lastY > window.innerHeight - 90) window.scrollBy(0, 10);
+      update();
+      raf = requestAnimationFrame(loop);
+    };
+    const move = e => { lastY = e.clientY; update(); };
+    const finish = apply => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      cancelAnimationFrame(raf);
+      const d = this.drag; this.drag = null;
+      if(apply && d && d.over !== d.from) this.moveCatTo(d.from, d.over);
+    };
+    const up = () => finish(true), cancel = () => finish(false);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+    raf = requestAnimationFrame(loop);
   },
   openCatModal(c = null){
     this.catForm = c ? {k: c.k, n: c.n, e: c.e, isEdit: true} : {k: 'cat_' + Date.now(), n: '', e: '✨', isEdit: false};
