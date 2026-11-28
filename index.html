@@ -604,9 +604,9 @@ button:active{transform:scale(.94)}
         </div>
 
         <div class="flex gap-2">
-          <select x-model="f.cat" class="flex-1 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
+          <select x-model="f.cat" x-effect="allCats.length; f && f.cat; $nextTick(() => { if(f) $el.value = f.cat; })" class="flex-1 rounded-2xl border p-3.5 text-sm outline-none" :class="ui.input">
             <template x-for="c in allCats" :key="c.k">
-              <option :value="c.k" x-text="c.e+' '+c.n"></option>
+              <option :value="c.k" :selected="f && c.k === f.cat" x-text="c.e+' '+c.n"></option>
             </template>
           </select>
           <button type="button" @click="openCatModal()" class="px-3.5 rounded-2xl border text-xs font-bold shrink-0" :class="ui.softBtn">＋ หมวด</button>
