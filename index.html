@@ -475,6 +475,12 @@ button:active{transform:scale(.94)}
           </div>
           <p class="text-[11px] opacity-70">Import จะเขียนทับข้อมูลสินค้าทั้งหมดในรหัสบ้านนี้</p>
         </div>
+
+        <div class="rounded-3xl border p-4 space-y-2.5" :class="ui.card">
+          <p class="font-bold text-sm">🌐 ฐานข้อมูลสินค้ากลาง</p>
+          <p class="text-[11px] opacity-70">ชื่อ รูป และบาร์โค้ดของสินค้าที่คุณเพิ่ม จะแชร์ให้ทุกห้องใช้ร่วมกัน ห้องอื่นสแกนเจอแล้วชื่อกับรูปขึ้นให้เลย ไม่แชร์จำนวนสต็อก ราคา หมวด หรือข้อมูลอื่นของบ้านคุณ</p>
+          <button type="button" @click="catalogSyncAll(true)" class="w-full py-3 rounded-2xl border font-semibold text-xs" :class="ui.softBtn">🌐 แชร์สินค้าที่มีอยู่เข้าฐานข้อมูลกลางอีกครั้ง</button>
+        </div>
         <p class="text-[11px] opacity-70 text-center px-4">ชื่อและรูปที่เติมให้อัตโนมัติเมื่อสแกนมาจาก Open Food Facts, Open Beauty Facts และ Open Products Facts (ODbL) เป็นข้อมูลจากอาสาสมัคร อาจไม่ถูกต้องทั้งหมด</p>
       </div>
     </div>
@@ -642,7 +648,7 @@ button:active{transform:scale(.94)}
         <div x-show="lookup.busy||lookup.src||lookup.miss" class="text-[11px] font-semibold rounded-xl px-3 py-2 space-y-1" :class="ui.softBtn">
           <div class="flex items-center gap-2">
             <span x-show="lookup.busy" class="inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin"></span>
-            <span class="flex-1" x-text="lookup.busy?'กำลังค้นหาชื่อสินค้า…':(lookup.src?('✨ เติมชื่อจาก '+lookup.src+' กรุณาตรวจและแก้ไขได้'):'ไม่พบข้อมูลสินค้านี้ กรอกชื่อเองได้เลย')"></span>
+            <span class="flex-1" x-text="lookup.busy?'กำลังค้นหาชื่อสินค้า…':(lookup.src?('✨ เติมข้อมูลจาก '+lookup.src+' กรุณาตรวจและแก้ไขได้'):'ไม่พบข้อมูลสินค้านี้ กรอกชื่อเองได้เลย')"></span>
             <button type="button" x-show="lookup.miss" @click="lookupInto(f.barcode)" class="underline font-bold shrink-0">ลองอีกครั้ง</button>
           </div>
           <p x-show="lookup.miss&&lookup.detail" class="font-normal opacity-70 break-words" x-text="lookup.detail"></p>
@@ -801,7 +807,10 @@ button:active{transform:scale(.94)}
             <p class="text-xs opacity-70">สแกนเจอเลขที่ยังไม่มีในระบบ</p>
             <p class="text-lg font-extrabold break-all" x-text="choice.code"></p>
             <p x-show="choice.looking" class="text-xs opacity-70 mt-1">กำลังค้นหาชื่อสินค้า…</p>
-            <p x-show="choice.name" class="text-sm font-bold mt-1" x-text="'🔎 '+choice.name+' ('+choice.src+')'"></p>
+            <div x-show="choice.name" class="flex items-center gap-2 mt-1">
+              <img x-show="choice.img" :src="choice.img" class="w-10 h-10 rounded-xl object-cover shrink-0" alt="">
+              <p class="text-sm font-bold" x-text="(choice.src==='ฐานข้อมูลกลาง'?'🌐 ':'🔎 ')+choice.name+' ('+choice.src+')'"></p>
+            </div>
           </div>
           <button type="button" @click="choice=null" aria-label="ปิด" class="w-8 h-8 rounded-full shrink-0 text-sm" :class="ui.softBtn">✕</button>
         </div>
@@ -875,7 +884,7 @@ button:active{transform:scale(.94)}
 <script type="module">
 import Alpine from "https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/module.esm.min.js";
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getDatabase,ref,onValue,update,set,push,increment} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getDatabase,ref,onValue,update,set,push,increment,get} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const DEFAULT_CFG = {
   apiKey: "AIzaSyAHIOVYr_gM6SY10P9h5IL3caL1KTxU5e8",
@@ -1071,6 +1080,7 @@ Alpine.data('app', () => ({
           if(Number(v?.qty) < 0) update(ref(db, this.base() + 'items/' + id), {qty: 0}).catch(() => {});
         }
         S('cache_' + this.code, JSON.stringify(this.items));
+        if(!this._catSyncTried && L('catSync1') !== 1 && Object.keys(this.items).length){ this._catSyncTried = true; this.catalogSyncAll(false); }
       }, e => { this.loaded = true; this.flash('อ่านข้อมูลไม่ได้: ' + e.code); });
       onValue(ref(db, this.base() + 'meta/name'), s => {
         const v = s.val();
@@ -1196,9 +1206,16 @@ Alpine.data('app', () => ({
     this.flash('เพิ่มเลข ' + code + ' แล้ว ตั้งป้ายและจำนวนชิ้นได้ด้านล่าง');
   },
   async askScan(code){
-    this.choice = {code, step: 'ask', name: '', src: '', q: '', pick: null, label: 'ล็อตใหม่', units: 1, looking: /^\d{6,14}$/.test(code)};
-    if(!this.choice.looking) return;
-    const r = await this.lookupProduct(code);
+    this.choice = {code, step: 'ask', name: '', src: '', q: '', pick: null, label: 'ล็อตใหม่', units: 1, img: '', looking: true};
+    const cat = await this.catalogGet(code);                       // 1) ฐานข้อมูลกลาง (ห้องอื่นเคยเพิ่มไว้)
+    if(!this.choice || this.choice.code !== code) return;
+    if(cat){
+      Object.assign(this.choice, {name: cat.name, src: 'ฐานข้อมูลกลาง', q: cat.name, img: cat.img, units: cat.units, looking: false});
+      if(cat.label) this.choice.label = cat.label;
+      return;
+    }
+    if(!/^\d{6,14}$/.test(code)){ this.choice.looking = false; return; }
+    const r = await this.lookupProduct(code);                      // 2) Open Food Facts ฯลฯ
     if(!this.choice || this.choice.code !== code) return;
     this.choice.looking = false;
     if(r && !r.fail){ this.choice.name = r.name; this.choice.src = r.source; this.choice.q = r.name; }
@@ -1221,7 +1238,7 @@ Alpine.data('app', () => ({
   choiceNew(){
     const c = this.choice; if(!c) return;
     this.choice = null;
-    this.add({barcode: c.code, name: c.name || ''});
+    this.add({barcode: c.code, name: c.name || '', img: c.img || ''});
     if(c.name) this.lookup = {busy: false, src: c.src, miss: false, detail: ''};
     else this.lookupInto(c.code);
   },
@@ -1231,6 +1248,8 @@ Alpine.data('app', () => ({
     const label = String(c.label || '').trim().slice(0, 20);
     const units = Math.max(1, Math.floor(Number(c.units) || 1));
     this.save(c.pick, {['codes/' + c.code]: {l: label, u: units}});
+    const pi = this.items[c.pick];
+    if(pi) this.catalogPublish(c.code, pi.name, pi.img, units, label);
     this.choice = null;
     this.hitInfo = {id: c.pick, label, units, code: c.code};
     this.hit = c.pick;
@@ -1535,6 +1554,7 @@ Alpine.data('app', () => ({
     if(prevItem && prevItem.expAck && !ackKept) data.expAck = null;
     if(f.id) this.save(f.id, data);
     else set(push(ref(db, this.base() + 'items')), {...data, createdAt: Date.now()});
+    this.catalogPublishItem({...data, codes: codesObj});
     this.f = null;
     this.flash('บันทึกเรียบร้อย ✨');
   },
@@ -1708,6 +1728,55 @@ Alpine.data('app', () => ({
     await this.stopScannerOnly();
   },
 
+  // ---------- ฐานข้อมูลสินค้ากลาง (ใช้ร่วมกันทุกห้อง) ----------
+  // เก็บที่ /catalog/{บาร์โค้ด} = {n: ชื่อ, i: รูป, u: จำนวนชิ้น/แพ็ก, l: ป้าย} ไม่มีสต็อก/ราคา/หมวดของบ้านใครปนไปด้วย
+  catKey(code){ const k = String(code || '').trim(); return (k.length >= 4 && k.length <= 40 && !/[.#$\[\]\/\s]/.test(k)) ? k : ''; },
+  async catalogGet(code){
+    const k = this.catKey(code);
+    if(!k || !db) return null;
+    this._catCache = this._catCache || {};
+    if(this._catCache[k] !== undefined) return this._catCache[k];
+    try{
+      const snap = await Promise.race([get(ref(db, 'catalog/' + k)), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
+      const v = snap.val();
+      const r = v && typeof v.n === 'string' && v.n ? {name: v.n, img: typeof v.i === 'string' ? v.i : '', units: Math.max(1, Number(v.u) || 1), label: typeof v.l === 'string' ? v.l : ''} : null;
+      this._catCache[k] = r;
+      return r;
+    }catch{ return null; }   // ออฟไลน์/หมดเวลา: ข้ามไปใช้แหล่งข้อมูลอื่น
+  },
+  // เพิ่มเข้าฐานข้อมูลกลางแบบไม่ทับของเดิม: ยังไม่มีเลขนี้ → เพิ่มใหม่ / มีแล้วแต่ยังไม่มีรูปและเรามีรูป → เติมรูปให้
+  async catalogPublish(code, name, img, units, label){
+    const k = this.catKey(code);
+    name = String(name || '').trim().slice(0, 80);
+    if(!k || !name || !db) return;
+    img = (typeof img === 'string' && img.length <= 30000 && /^(data:image\/|https?:\/\/)/.test(img)) ? img : '';
+    try{
+      const old = (await get(ref(db, 'catalog/' + k))).val();
+      if(!old){
+        const v = {n: name, t: Date.now()};
+        if(img) v.i = img;
+        if(Number(units) > 1) v.u = Math.floor(Number(units));
+        if(label) v.l = String(label).slice(0, 20);
+        await set(ref(db, 'catalog/' + k), v);
+      }else if(img && !old.i){
+        await update(ref(db, 'catalog/' + k), {i: img});
+      }else return;
+      if(this._catCache) delete this._catCache[k];
+    }catch{}
+  },
+  async catalogPublishItem(it){
+    if(!it || !it.name) return;
+    const bc = String(it.barcode || '').trim();
+    if(bc) await this.catalogPublish(bc, it.name, it.img, 1, '');
+    for(const c of this.codeList(it)) await this.catalogPublish(c.code, it.name, it.img, c.units, c.label);
+  },
+  async catalogSyncAll(manual){
+    const list = Object.values(this.items || {}).filter(i => i && i.name && !i.retired);
+    for(const it of list) await this.catalogPublishItem(it);
+    S('catSync1', '1');
+    if(manual) this.flash('แชร์สินค้าเข้าฐานข้อมูลกลางแล้ว 🌐');
+  },
+
   // ค้นชื่อสินค้าจาก Open Food Facts (API v3) แล้วลอง Beauty / Products / Pet Food Facts พร้อมกัน
   // (ยังไม่ดึงรูป)
   async lookupProduct(code){
@@ -1749,6 +1818,15 @@ Alpine.data('app', () => ({
   async lookupInto(code){
     code = String(code || '').trim();
     if(!this.f) return;
+    const cat = await this.catalogGet(code);
+    if(!this.f || String(this.f.barcode || '').trim() !== code) return;
+    if(cat){
+      let filled = false;
+      if(!String(this.f.name || '').trim()){ this.f.name = cat.name; filled = true; }
+      if(!this.f.img && cat.img){ this.f.img = cat.img; this.f.imgUrl = /^https?:/.test(cat.img) ? cat.img : ''; filled = true; }
+      this.lookup = {busy:false, src: filled ? 'ฐานข้อมูลกลาง' : '', miss:false, detail:''};
+      if(filled) return;
+    }
     if(!/^\d{6,14}$/.test(code)){ this.lookup = {busy:false, src:'', miss:true, detail:'บาร์โค้ดต้องเป็นตัวเลข 6–14 หลัก'}; return; }
     this.lookup = {busy:true, src:'', miss:false, detail:''};
     const r = await this.lookupProduct(code);
